@@ -1,8 +1,7 @@
 {
-  "OpenAI": {
-    "ApiKey": "your-azure-openai-api-key-here",
-    "Endpoint": "https://your-resource-name.openai.azure.com/",
-    "DeploymentName": "gpt-4"
+  "Ollama": {
+    "Url": "http://localhost:11434",
+    "ModelName": "phi4"
   },
   "Logging": {
     "LogLevel": {

@@ -1,11 +1,37 @@
 # AI Bible App
 
-A C# console application that allows users to interact with biblical figures through AI-powered conversations and receive personalized daily prayers.
+A cross-platform application that allows users to interact with biblical figures through AI-powered conversations and receive personalized daily prayers - **now fully offline with Scripture-grounded responses and a beautiful modern UI**.
+
+## ✨ New Features
+
+### 🎨 Modern Cross-Platform UI (NEW!)
+- **Beautiful .NET MAUI interface** for mobile and desktop
+- Native apps for **Windows, Android, iOS, and macOS**
+- Intuitive card-based character selection
+- Modern chat interface with message bubbles
+- Touch-optimized prayer generator
+- See [MAUI_IMPLEMENTATION.md](MAUI_IMPLEMENTATION.md) for details
+
+### 🔒 Fully Offline AI
+- No internet required after setup
+- Complete privacy - all data stays on your device
+- Uses local **Phi-4** model via Ollama
+- Zero API costs
+
+### 📖 RAG-Powered Scripture Grounding
+- **Retrieval-Augmented Generation (RAG)** ensures biblically accurate responses
+- Automatically retrieves relevant Bible verses before generating responses
+- Reduces AI hallucinations with real Scripture
+- **Multiple Bible translations**: World English Bible (WEB) and King James Version (KJV)
+- **Flexible chunking**: Per-verse, overlap, or multi-verse strategies
+- Semantic search with enhanced metadata (book, chapter, verse, reference)
+- See [RAG_IMPLEMENTATION.md](RAG_IMPLEMENTATION.md) and [WEB_BIBLE_ADDITION.md](WEB_BIBLE_ADDITION.md) for details
 
 ## Features
 
 ### 1. Biblical Character Chat System
 - **Interactive Conversations**: Chat with biblical figures who respond in character
+- **Scripture-Grounded**: RAG retrieves relevant Bible passages to inform responses
 - **Available Characters**:
   - **David** - King of Israel, Psalmist, and Shepherd
   - **Paul** - Apostle to the Gentiles, Missionary, and Letter Writer
@@ -15,6 +41,7 @@ A C# console application that allows users to interact with biblical figures thr
 
 ### 2. Daily Prayer Generation
 - Generate personalized prayers powered by AI
+- **Scripture-Infused**: Prayers informed by relevant Bible verses
 - Request prayers for specific topics or needs
 - Save prayer history for future reference
 - View all saved prayers
@@ -23,30 +50,55 @@ A C# console application that allows users to interact with biblical figures thr
 - **Clean Architecture**: Separation of concerns with distinct layers
 - **Projects**:
   - `AI-Bible-App.Core` - Domain models and interfaces
-  - `AI-Bible-App.Infrastructure` - AI service integration and data access
+  - `AI-Bible-App.Infrastructure` - AI service integration, RAG, and data access
   - `AI-Bible-App.Console` - Console application entry point
   - `AI-Bible-App.Tests` - Unit tests
-- **AI Integration**: Uses Azure OpenAI API
+- **AI Integration**: Local Phi-4 model via Ollama (Microsoft Semantic Kernel)
+- **RAG System**: Vector embeddings with semantic search
 - **Data Persistence**: JSON file-based storage for chat and prayer history
 
 ## Prerequisites
 
 - .NET 8.0 SDK or later
-- Azure OpenAI API access (or OpenAI API key)
+- **Ollama** - for running local AI models
+- **8-16 GB RAM** recommended
 
 ## Setup Instructions
 
-### 1. Clone the Repository
+### 1. Install Ollama
+
+**Windows:**
+Download from [ollama.ai](https://ollama.ai/download)
+
+**macOS:**
+```bash
+brew install ollama
+```
+
+**Linux:**
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+### 2. Download Required Models
+
+```bash
+# Chat model (required)
+ollama pull phi4
+
+# Embedding model for RAG (required)
+ollama pull nomic-embed-text
+```
+
+### 3. Clone the Repository
 ```bash
 git clone https://github.com/DJMcClellan1966/AI-Bible-app.git
 cd AI-Bible-app
 ```
 
-### 2. Configure API Keys
+### 4. Configuration
 
-Create a local configuration file (this file is ignored by git):
-
-**Option A: Create `appsettings.local.json` in the Console project directory:**
+The app is pre-configured for local Ollama in [appsettings.json](src/AI-Bible-App.Console/appsettings.json).
 
 ```bash
 cd src/AI-Bible-App.Console

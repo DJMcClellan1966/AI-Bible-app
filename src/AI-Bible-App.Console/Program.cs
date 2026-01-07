@@ -46,7 +46,19 @@ class Program
         });
 
         // Register services
-        services.AddSingleton<IAIService, OpenAIService>();
+        // Use WEB Bible repository by default (can switch to JsonBibleRepository for KJV)
+        var defaultTranslation = configuration["Bible:DefaultTranslation"] ?? "WEB";
+        if (defaultTranslation.Equals("WEB", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IBibleRepository, WebBibleRepository>();
+        }
+        else
+        {
+            services.AddSingleton<IBibleRepository, JsonBibleRepository>();
+        }
+        
+        services.AddSingleton<IBibleRAGService, BibleRAGService>();
+        services.AddSingleton<IAIService, LocalAIService>();
         services.AddSingleton<ICharacterRepository, InMemoryCharacterRepository>();
         services.AddSingleton<IChatRepository, JsonChatRepository>();
         services.AddSingleton<IPrayerRepository, JsonPrayerRepository>();

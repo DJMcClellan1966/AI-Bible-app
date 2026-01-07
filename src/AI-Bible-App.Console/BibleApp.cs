@@ -13,6 +13,7 @@ public class BibleApp
     private readonly ICharacterRepository _characterRepository;
     private readonly IChatRepository _chatRepository;
     private readonly IPrayerRepository _prayerRepository;
+    private readonly IBibleRAGService? _ragService;
     private readonly ILogger<BibleApp> _logger;
     private ChatSession? _currentSession;
 
@@ -21,12 +22,14 @@ public class BibleApp
         ICharacterRepository characterRepository,
         IChatRepository chatRepository,
         IPrayerRepository prayerRepository,
-        ILogger<BibleApp> logger)
+        ILogger<BibleApp> logger,
+        IBibleRAGService? ragService = null)
     {
         _aiService = aiService;
         _characterRepository = characterRepository;
         _chatRepository = chatRepository;
         _prayerRepository = prayerRepository;
+        _ragService = ragService;
         _logger = logger;
     }
 
@@ -38,6 +41,24 @@ public class BibleApp
         System.Console.WriteLine("║    Talk with Biblical Characters & Generate Prayers       ║");
         System.Console.WriteLine("╚════════════════════════════════════════════════════════════╝");
         System.Console.WriteLine();
+
+        // Initialize RAG service if available
+        if (_ragService != null && !_ragService.IsInitialized)
+        {
+            System.Console.WriteLine("Initializing Scripture search (RAG)...");
+            try
+            {
+                await _ragService.InitializeAsync();
+                System.Console.WriteLine("✓ Scripture search initialized successfully");
+                System.Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize RAG service");
+                System.Console.WriteLine("⚠ Scripture search unavailable (running without RAG)");
+                System.Console.WriteLine();
+            }
+        }
 
         while (true)
         {

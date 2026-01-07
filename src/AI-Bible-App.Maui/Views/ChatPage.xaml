@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AI_Bible_App.Maui.ViewModels"
+             xmlns:models="clr-namespace:AI_Bible_App.Core.Models;assembly=AI-Bible-App.Core"
+             x:Class="AI_Bible_App.Maui.Views.ChatPage"
+             x:DataType="vm:ChatViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+    
+    <Grid RowDefinitions="*,Auto">
+        
+        <!-- Chat Messages -->
+        <ScrollView Grid.Row="0" x:Name="ChatScrollView">
+            <CollectionView ItemsSource="{Binding Messages}"
+                           Margin="15">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ChatMessage">
+                        <Grid Margin="0,5">
+                            <!-- User Message (Right Aligned) -->
+                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='user'}"
+                                    HorizontalOptions="End"
+                                    MaximumWidthRequest="300"
+                                    Padding="15"
+                                    BackgroundColor="{DynamicResource Primary}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="20"/>
+                                </Border.StrokeShape>
+                                <Label Text="{Binding Content}"
+                                       TextColor="White"
+                                       LineBreakMode="WordWrap"/>
+                            </Border>
+                            
+                            <!-- Assistant Message (Left Aligned) -->
+                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='assistant'}"
+                                    HorizontalOptions="Start"
+                                    MaximumWidthRequest="300"
+                                    Padding="15"
+                                    StrokeThickness="1"
+                                    Stroke="{DynamicResource Gray300}"
+                                    BackgroundColor="{DynamicResource CardBackground}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="20"/>
+                                </Border.StrokeShape>
+                                <Label Text="{Binding Content}"
+                                       TextColor="{DynamicResource TextColor}"
+                                       LineBreakMode="WordWrap"/>
+                            </Border>
+
+                            <!-- System Message (Centered, Error) -->
+                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='system'}"
+                                    HorizontalOptions="Center"
+                                    Padding="10"
+                                    BackgroundColor="{DynamicResource Warning}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8"/>
+                                </Border.StrokeShape>
+                                <Label Text="{Binding Content}"
+                                       FontSize="12"
+                                       TextColor="White"
+                                       LineBreakMode="WordWrap"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </ScrollView>
+
+        <!-- Input Area -->
+        <Grid Grid.Row="1" 
+              ColumnDefinitions="*,Auto"
+              Padding="15,10"
+              BackgroundColor="{DynamicResource CardBackground}">
+            
+            <Border Grid.Column="0"
+                    Padding="10"
+                    StrokeThickness="1"
+                    Stroke="{DynamicResource Gray300}"
+                    BackgroundColor="{DynamicResource InputBackground}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="25"/>
+                </Border.StrokeShape>
+                <Entry Text="{Binding UserMessage}"
+                       Placeholder="Type your message..."
+                       ReturnCommand="{Binding SendMessageCommand}"
+                       IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
+                       VerticalOptions="Center"/>
+            </Border>
+
+            <Button Grid.Column="1"
+                    Text="Send"
+                    Command="{Binding SendMessageCommand}"
+                    IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
+                    Margin="10,0,0,0"
+                    WidthRequest="80"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"/>
+        </Grid>
+
+        <!-- Typing Indicator -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding IsAiTyping}"
+                HorizontalOptions="Start"
+                VerticalOptions="End"
+                Margin="20"
+                Padding="15"
+                BackgroundColor="{DynamicResource CardBackground}"
+                Shadow="{Shadow Brush=Black, Offset='0,2', Radius=4, Opacity=0.3}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20"/>
+            </Border.StrokeShape>
+            <HorizontalStackLayout Spacing="5">
+                <Label Text="{Binding Character.Name, StringFormat='{0} is typing'}"
+                       FontSize="12"
+                       TextColor="{DynamicResource Gray600}"/>
+                <ActivityIndicator IsRunning="True"
+                                 WidthRequest="15"
+                                 HeightRequest="15"
+                                 Color="{DynamicResource Primary}"/>
+            </HorizontalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

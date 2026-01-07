@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AI_Bible_App.Maui.ViewModels"
+             xmlns:models="clr-namespace:AI_Bible_App.Core.Models;assembly=AI-Bible-App.Core"
+             x:Class="AI_Bible_App.Maui.Views.CharacterSelectionPage"
+             x:DataType="vm:CharacterSelectionViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+    
+    <Grid RowDefinitions="Auto,*,Auto" Padding="20">
+        
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="10" Margin="0,20,0,30">
+            <Label Text="📖 AI Bible App"
+                   FontSize="36"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="{DynamicResource Primary}"/>
+            <Label Text="Converse with Biblical Characters"
+                   FontSize="18"
+                   HorizontalOptions="Center"
+                   TextColor="{DynamicResource Gray600}"/>
+        </VerticalStackLayout>
+
+        <!-- Character List -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="15">
+                <Label Text="Choose a Character:"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       Margin="0,0,0,10"/>
+                
+                <CollectionView ItemsSource="{Binding Characters}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:BiblicalCharacter">
+                            <Border Padding="15"
+                                    Margin="0,0,0,10"
+                                    BackgroundColor="{DynamicResource CardBackground}"
+                                    Shadow="{Shadow Brush=Black, Offset='0,2', Radius=4, Opacity=0.3}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12"/>
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CharacterSelectionViewModel}}, Path=SelectCharacterCommand}"
+                                        CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                                
+                                <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
+                                    <!-- Avatar Circle -->
+                                    <Border Grid.Column="0"
+                                            WidthRequest="60"
+                                            HeightRequest="60"
+                                            Padding="0"
+                                            BackgroundColor="{DynamicResource Primary}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="30"/>
+                                        </Border.StrokeShape>
+                                        <Label Text="{Binding Name, StringFormat='{0:substring(0,1)}'}"
+                                               FontSize="28"
+                                               FontAttributes="Bold"
+                                               TextColor="White"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Border>
+                                    
+                                    <!-- Character Info -->
+                                    <VerticalStackLayout Grid.Column="1" Spacing="5">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="20"
+                                               FontAttributes="Bold"/>
+                                        <Label Text="{Binding Role}"
+                                               FontSize="14"
+                                               TextColor="{DynamicResource Primary}"/>
+                                        <Label Text="{Binding Description}"
+                                               FontSize="12"
+                                               TextColor="{DynamicResource Gray600}"
+                                               LineBreakMode="WordWrap"/>
+                                        <Label Text="{Binding Era, StringFormat='Era: {0}'}"
+                                               FontSize="11"
+                                               FontAttributes="Italic"
+                                               TextColor="{DynamicResource Gray500}"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Prayer Button -->
+        <Button Grid.Row="2"
+                Text="🙏 Generate a Prayer"
+                Command="{Binding NavigateToPrayerCommand}"
+                Margin="0,20,0,0"
+                HeightRequest="55"
+                FontSize="18"
+                BackgroundColor="{DynamicResource Secondary}"
+                TextColor="White"
+                CornerRadius="12"/>
+        
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.RowSpan="3"
+                          IsRunning="{Binding IsBusy}"
+                          IsVisible="{Binding IsBusy}"
+                          Color="{DynamicResource Primary}"
+                          WidthRequest="50"
+                          HeightRequest="50"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center"/>
+    </Grid>
+</ContentPage>

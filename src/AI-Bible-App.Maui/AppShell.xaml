@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="AI_Bible_App.Maui.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:AI_Bible_App.Maui.Views"
+    Title="AI Bible App"
+    FlyoutBehavior="Disabled">
+
+    <ShellContent
+        Title="Character Selection"
+        ContentTemplate="{DataTemplate views:CharacterSelectionPage}"
+        Route="characters" />
+
+</Shell>

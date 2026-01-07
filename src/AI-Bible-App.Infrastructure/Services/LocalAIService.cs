@@ -1,0 +1,255 @@
+using AI_Bible_App.Core.Interfaces;
+using AI_Bible_App.Core.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using OllamaSharp;
+using OllamaSharp.Models;
+using OllamaSharp.Models.Chat;
+using System.Text;
+
+namespace AI_Bible_App.Infrastructure.Services;
+
+/// <summary>
+/// Implementation of AI service using local Phi-4 model via Ollama with RAG support
+/// </summary>
+public class LocalAIService : IAIService
+{
+    private readonly OllamaApiClient _client;
+    private readonly string _modelName;
+    private readonly ILogger<LocalAIService> _logger;
+    private readonly IBibleRAGService? _ragService;
+    private readonly bool _useRAG;
+
+    public LocalAIService(
+        IConfiguration configuration, 
+        ILogger<LocalAIService> logger,
+        IBibleRAGService? ragService = null)
+    {
+        _logger = logger;
+        _ragService = ragService;
+        
+        var ollamaUrl = configuration["Ollama:Url"] ?? "http://localhost:11434";
+        _modelName = configuration["Ollama:ModelName"] ?? "phi4";
+        _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
+        
+        _client = new OllamaApiClient(ollamaUrl)
+        {
+            SelectedModel = _modelName
+        };
+
+        _logger.LogInformation(
+            "LocalAIService initialized with model: {ModelName} at {Url}, RAG: {RAGEnabled}", 
+            _modelName, 
+            ollamaUrl, 
+            _useRAG && _ragService != null);
+    }
+
+    public async Task<string> GetChatResponseAsync(
+        BiblicalCharacter character, 
+        List<Core.Models.ChatMessage> conversationHistory, 
+        string userMessage, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var messages = new List<Message>
+            {
+                new Message
+                {
+                    Role = ChatRole.System,
+                    Content = character.SystemPrompt
+                }
+            };
+
+            // RAG: Retrieve relevant Bible verses if enabled
+            string? retrievedContext = null;
+            if (_useRAG && _ragService != null && _ragService.IsInitialized)
+            {
+                retrievedContext = await GetRelevantScriptureContextAsync(userMessage, cancellationToken);
+                
+                if (!string.IsNullOrEmpty(retrievedContext))
+                {
+                    // Add retrieved verses as context
+                    messages.Add(new Message
+                    {
+                        Role = ChatRole.System,
+                        Content = $"Relevant Scripture passages for context:\n{retrievedContext}\n\nUse these passages to inform your response when appropriate."
+                    });
+                    
+                    _logger.LogDebug("Added RAG context to chat request");
+                }
+            }
+
+            // Add conversation history (limit to last 10 messages to manage context size)
+            foreach (var msg in conversationHistory.TakeLast(10))
+            {
+                messages.Add(new Message
+                {
+                    Role = msg.Role == "user" ? ChatRole.User : ChatRole.Assistant,
+                    Content = msg.Content
+                });
+            }
+
+            // Add current user message
+            messages.Add(new Message
+            {
+                Role = ChatRole.User,
+                Content = userMessage
+            });
+
+            var request = new ChatRequest
+            {
+                Model = _modelName,
+                Messages = messages
+            };
+
+            _logger.LogDebug("Sending chat request to Ollama with {MessageCount} messages", messages.Count);
+
+            var responseText = string.Empty;
+            
+            await foreach (var response in _client.ChatAsync(request, cancellationToken))
+            {
+                if (response?.Message?.Content != null)
+                {
+                    responseText += response.Message.Content;
+                }
+            }
+            
+            if (string.IsNullOrEmpty(responseText))
+            {
+                throw new InvalidOperationException("Received null or empty response from Ollama");
+            }
+
+            return responseText;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting chat response from local AI model");
+            throw;
+        }
+    }
+
+    public async Task<string> GeneratePrayerAsync(string topic, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var systemPrompt = @"You are a compassionate prayer writer. Generate heartfelt, biblical prayers that are meaningful and spiritually uplifting. 
+Keep prayers concise (2-3 paragraphs), use reverent language, and include relevant scripture themes when appropriate.";
+
+            var userPrompt = string.IsNullOrEmpty(topic) 
+                ? "Generate a daily prayer for guidance, strength, and gratitude." 
+                : $"Generate a prayer about: {topic}";
+
+            var messages = new List<Message>
+            {
+                new Message
+                {
+                    Role = ChatRole.System,
+                    Content = systemPrompt
+                }
+            };
+
+            // RAG: Retrieve relevant Bible verses for prayer context
+            if (_useRAG && _ragService != null && _ragService.IsInitialized)
+            {
+                var retrievedContext = await GetRelevantScriptureContextAsync(
+                    topic ?? "daily prayer guidance strength gratitude", 
+                    cancellationToken);
+                
+                if (!string.IsNullOrEmpty(retrievedContext))
+                {
+                    messages.Add(new Message
+                    {
+                        Role = ChatRole.System,
+                        Content = $"Relevant Scripture passages to inspire the prayer:\n{retrievedContext}"
+                    });
+                    
+                    _logger.LogDebug("Added RAG context to prayer generation");
+                }
+            }
+
+            messages.Add(new Message
+            {
+                Role = ChatRole.User,
+                Content = userPrompt
+            });
+
+            var request = new ChatRequest
+            {
+                Model = _modelName,
+                Messages = messages
+            };
+
+            _logger.LogDebug("Generating prayer with topic: {Topic}", topic ?? "general");
+
+            var responseText = string.Empty;
+            
+            await foreach (var response in _client.ChatAsync(request, cancellationToken))
+            {
+                if (response?.Message?.Content != null)
+                {
+                    responseText += response.Message.Content;
+                }
+            }
+            
+            if (string.IsNullOrEmpty(responseText))
+            {
+                throw new InvalidOperationException("Received null or empty response from Ollama");
+            }
+
+            return responseText;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating prayer from local AI model");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Retrieve relevant Scripture context using RAG
+    /// </summary>
+    private async Task<string?> GetRelevantScriptureContextAsync(
+        string query, 
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (_ragService == null || !_ragService.IsInitialized)
+            {
+                return null;
+            }
+
+            var relevantChunks = await _ragService.RetrieveRelevantVersesAsync(
+                query, 
+                limit: 3,
+                minRelevanceScore: 0.6,
+                cancellationToken: cancellationToken);
+
+            if (!relevantChunks.Any())
+            {
+                _logger.LogDebug("No relevant Scripture found for query: {Query}", query);
+                return null;
+            }
+
+            var context = new StringBuilder();
+            foreach (var chunk in relevantChunks)
+            {
+                context.AppendLine($"{chunk.Reference}:");
+                context.AppendLine(chunk.Text);
+                context.AppendLine();
+            }
+
+            _logger.LogInformation(
+                "Retrieved {Count} relevant Scripture passages for query", 
+                relevantChunks.Count);
+
+            return context.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving Scripture context");
+            return null;
+        }
+    }
+}
