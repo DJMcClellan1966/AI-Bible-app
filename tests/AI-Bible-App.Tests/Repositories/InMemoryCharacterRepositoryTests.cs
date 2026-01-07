@@ -5,7 +5,7 @@ namespace AI_Bible_App.Tests.Repositories;
 public class InMemoryCharacterRepositoryTests
 {
     [Fact]
-    public async Task GetAllCharactersAsync_ShouldReturnDavidAndPaul()
+    public async Task GetAllCharactersAsync_ShouldReturnAllSevenCharacters()
     {
         // Arrange
         var repository = new InMemoryCharacterRepository();
@@ -15,9 +15,14 @@ public class InMemoryCharacterRepositoryTests
 
         // Assert
         Assert.NotNull(characters);
-        Assert.Equal(2, characters.Count);
+        Assert.Equal(7, characters.Count);
         Assert.Contains(characters, c => c.Id == "david");
         Assert.Contains(characters, c => c.Id == "paul");
+        Assert.Contains(characters, c => c.Id == "moses");
+        Assert.Contains(characters, c => c.Id == "mary");
+        Assert.Contains(characters, c => c.Id == "peter");
+        Assert.Contains(characters, c => c.Id == "esther");
+        Assert.Contains(characters, c => c.Id == "john");
     }
 
     [Fact]

@@ -41,6 +41,7 @@ public static class MauiProgram
 
 		// Register services
 		builder.Services.AddSingleton<INavigationService, NavigationService>();
+		builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
 		
 		// Use WEB Bible repository by default
 		builder.Services.AddSingleton<IBibleRepository, WebBibleRepository>();
@@ -51,11 +52,13 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IPrayerRepository, JsonPrayerRepository>();
 
 		// Register ViewModels
+		builder.Services.AddTransient<InitializationViewModel>();
 		builder.Services.AddTransient<CharacterSelectionViewModel>();
 		builder.Services.AddTransient<ChatViewModel>();
 		builder.Services.AddTransient<PrayerViewModel>();
 
 		// Register Pages
+		builder.Services.AddTransient<InitializationPage>();
 		builder.Services.AddTransient<CharacterSelectionPage>();
 		builder.Services.AddTransient<ChatPage>();
 		builder.Services.AddTransient<PrayerPage>();

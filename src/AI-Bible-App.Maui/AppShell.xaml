@@ -8,6 +8,11 @@
     FlyoutBehavior="Disabled">
 
     <ShellContent
+        Title="Initialization"
+        ContentTemplate="{DataTemplate views:InitializationPage}"
+        Route="initialization" />
+
+    <ShellContent
         Title="Character Selection"
         ContentTemplate="{DataTemplate views:CharacterSelectionPage}"
         Route="characters" />

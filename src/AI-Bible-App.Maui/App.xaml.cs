@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using AI_Bible_App.Core.Interfaces;
 
 namespace AI_Bible_App.Maui;
 
@@ -11,6 +12,9 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		return new Window(new AppShell());
+		var shell = new AppShell();
+		// Start with initialization page
+		shell.CurrentItem = shell.Items[0]; // InitializationPage
+		return new Window(shell);
 	}
 }

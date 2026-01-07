@@ -67,6 +67,12 @@
 		<MauiAsset Include="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</MauiAsset>
+		<MauiAsset Include="Data\Bible\web.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</MauiAsset>
+		<MauiAsset Include="Data\Bible\kjv.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</MauiAsset>
 	</ItemGroup>
 
 	<ItemGroup>
