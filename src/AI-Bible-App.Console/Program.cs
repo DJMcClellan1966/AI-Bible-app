@@ -46,6 +46,10 @@ class Program
         });
 
         // Register services
+        // Add encryption and file security services
+        services.AddSingleton<IEncryptionService, EncryptionService>();
+        services.AddSingleton<IFileSecurityService, FileSecurityService>();
+        
         // Use WEB Bible repository by default (can switch to JsonBibleRepository for KJV)
         var defaultTranslation = configuration["Bible:DefaultTranslation"] ?? "WEB";
         if (defaultTranslation.Equals("WEB", StringComparison.OrdinalIgnoreCase))

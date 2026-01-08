@@ -42,6 +42,8 @@ public static class MauiProgram
 		// Register services
 		builder.Services.AddSingleton<INavigationService, NavigationService>();
 		builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
+		builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
+		builder.Services.AddSingleton<IFileSecurityService, FileSecurityService>();
 		
 		// Use WEB Bible repository by default
 		builder.Services.AddSingleton<IBibleRepository, WebBibleRepository>();
