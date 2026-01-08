@@ -26,9 +26,6 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private bool isAiTyping;
 
-    [ObservableProperty]
-    private bool useStreaming = true;
-
     public ChatViewModel(IAIService aiService, IChatRepository chatRepository)
     {
         _aiService = aiService;
@@ -40,7 +37,6 @@ public partial class ChatViewModel : BaseViewModel
         Character = character;
         Title = $"Chat with {character.Name}";
         
-        // Create or load session
         _currentSession = new ChatSession
         {
             Id = Guid.NewGuid().ToString(),
@@ -49,7 +45,6 @@ public partial class ChatViewModel : BaseViewModel
             Messages = new List<ChatMessage>()
         };
 
-        // Add welcome message
         var welcomeMessage = new ChatMessage
         {
             Role = "assistant",
@@ -64,16 +59,21 @@ public partial class ChatViewModel : BaseViewModel
     [RelayCommand]
     private async Task SendMessage()
     {
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] SendMessage called. UserMessage: \"{UserMessage}\", Character: {Character?.Name}, IsAiTyping: {IsAiTyping}");
+        
         if (string.IsNullOrWhiteSpace(UserMessage) || Character == null || IsAiTyping)
+        {
+            System.Diagnostics.Debug.WriteLine("[DEBUG] SendMessage early exit");
             return;
+        }
 
         try
         {
+            System.Diagnostics.Debug.WriteLine("[DEBUG] Setting IsAiTyping = true");
             IsAiTyping = true;
             var userMsg = UserMessage;
             UserMessage = string.Empty;
 
-            // Add user message
             var chatMessage = new ChatMessage
             {
                 Role = "user",
@@ -82,47 +82,22 @@ public partial class ChatViewModel : BaseViewModel
             };
             Messages.Add(chatMessage);
             _currentSession?.Messages.Add(chatMessage);
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Added user message: {userMsg}");
 
-            // Get AI response with streaming
-            if (UseStreaming)
+            System.Diagnostics.Debug.WriteLine("[DEBUG] Calling AI service...");
+            var conversationHistory = Messages.ToList();
+            var response = await _aiService.GetChatResponseAsync(Character, conversationHistory, userMsg);
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Got AI response length: {response?.Length ?? 0}");
+
+            var aiMessage = new ChatMessage
             {
-                // Create placeholder message for streaming
-                var aiMessage = new ChatMessage
-                {
-                    Role = "assistant",
-                    Content = "",
-                    Timestamp = DateTime.UtcNow
-                };
-                Messages.Add(aiMessage);
+                Role = "assistant",
+                Content = response ?? "No response received",
+                Timestamp = DateTime.UtcNow
+            };
+            Messages.Add(aiMessage);
+            _currentSession?.Messages.Add(aiMessage);
 
-                var conversationHistory = Messages.Take(Messages.Count - 1).ToList();
-                
-                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg))
-                {
-                    aiMessage.Content += token;
-                    // Trigger UI update
-                    OnPropertyChanged(nameof(Messages));
-                }
-
-                _currentSession?.Messages.Add(aiMessage);
-            }
-            else
-            {
-                // Traditional non-streaming response
-                var conversationHistory = Messages.ToList();
-                var response = await _aiService.GetChatResponseAsync(Character, conversationHistory, userMsg);
-
-                var aiMessage = new ChatMessage
-                {
-                    Role = "assistant",
-                    Content = response,
-                    Timestamp = DateTime.UtcNow
-                };
-                Messages.Add(aiMessage);
-                _currentSession?.Messages.Add(aiMessage);
-            }
-
-            // Save session
             if (_currentSession != null)
             {
                 await _chatRepository.SaveSessionAsync(_currentSession);
@@ -130,9 +105,10 @@ public partial class ChatViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] SendMessage ERROR: {ex}");
             var errorMessage = new ChatMessage
             {
-                Role = "system",
+                Role = "assistant",
                 Content = $"Error: {ex.Message}",
                 Timestamp = DateTime.UtcNow
             };
@@ -140,23 +116,47 @@ public partial class ChatViewModel : BaseViewModel
         }
         finally
         {
+            System.Diagnostics.Debug.WriteLine("[DEBUG] Setting IsAiTyping = false");
             IsAiTyping = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RateMessage(ChatMessage message)
+    {
+        if (message == null || message.Role != "assistant") return;
+        
+        // Toggle rating: if already thumbs up, remove rating; otherwise set thumbs up
+        message.Rating = message.Rating == 1 ? 0 : 1;
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] Rated message {message.Id} as {message.Rating}");
+        
+        // Save the updated session with rating
+        if (_currentSession != null)
+        {
+            await _chatRepository.SaveSessionAsync(_currentSession);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RateMessageNegative(ChatMessage message)
+    {
+        if (message == null || message.Role != "assistant") return;
+        
+        // Toggle rating: if already thumbs down, remove rating; otherwise set thumbs down
+        message.Rating = message.Rating == -1 ? 0 : -1;
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] Rated message {message.Id} as {message.Rating}");
+        
+        // Save the updated session with rating
+        if (_currentSession != null)
+        {
+            await _chatRepository.SaveSessionAsync(_currentSession);
         }
     }
 
     [RelayCommand]
     private async Task ClearChat()
     {
-        var confirmed = false;
-        if (Shell.Current?.CurrentPage != null)
-        {
-            confirmed = await Shell.Current.CurrentPage.DisplayAlertAsync(
-                "Clear Chat",
-                "Are you sure you want to clear this conversation?",
-                "Yes", "No");
-        }
-
-        if (confirmed && Character != null)
+        if (Character != null)
         {
             Messages.Clear();
             await InitializeAsync(Character);

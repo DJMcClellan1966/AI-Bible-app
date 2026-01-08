@@ -32,7 +32,8 @@
                        Margin="0,0,0,10"/>
                 
                 <CollectionView ItemsSource="{Binding Characters}"
-                                SelectionMode="None">
+                                SelectionMode="Single"
+                                SelectionChanged="OnCharacterSelected">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:BiblicalCharacter">
                             <Border Padding="15"
@@ -42,11 +43,6 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="12"/>
                                 </Border.StrokeShape>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer 
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CharacterSelectionViewModel}}, Path=SelectCharacterCommand}"
-                                        CommandParameter="{Binding .}"/>
-                                </Border.GestureRecognizers>
                                 
                                 <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
                                     <!-- Avatar Circle -->

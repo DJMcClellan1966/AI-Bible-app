@@ -37,33 +37,25 @@ public static class MauiProgram
 				.Build();
 			builder.Configuration.AddConfiguration(config);
 		}
-		builder.Services.AddSingleton(builder.Configuration);
+		builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
-		// Register services
+		// Core services
 		builder.Services.AddSingleton<INavigationService, NavigationService>();
-		builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
-		builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
-		builder.Services.AddSingleton<IFileSecurityService, FileSecurityService>();
-		
-		// Use WEB Bible repository by default
-		builder.Services.AddSingleton<IBibleRepository, WebBibleRepository>();
-		builder.Services.AddSingleton<IBibleRAGService, BibleRAGService>();
-		builder.Services.AddSingleton<IAIService, LocalAIService>();
 		builder.Services.AddSingleton<ICharacterRepository, InMemoryCharacterRepository>();
 		builder.Services.AddSingleton<IChatRepository, JsonChatRepository>();
-		builder.Services.AddSingleton<IPrayerRepository, JsonPrayerRepository>();
+		
+		// AI Services - Hybrid (local Ollama + cloud Groq fallback)
+		builder.Services.AddSingleton<LocalAIService>();
+		builder.Services.AddSingleton<GroqAIService>();
+		builder.Services.AddSingleton<IAIService, HybridAIService>();
 
 		// Register ViewModels
-		builder.Services.AddTransient<InitializationViewModel>();
 		builder.Services.AddTransient<CharacterSelectionViewModel>();
 		builder.Services.AddTransient<ChatViewModel>();
-		builder.Services.AddTransient<PrayerViewModel>();
 
 		// Register Pages
-		builder.Services.AddTransient<InitializationPage>();
 		builder.Services.AddTransient<CharacterSelectionPage>();
 		builder.Services.AddTransient<ChatPage>();
-		builder.Services.AddTransient<PrayerPage>();
 
 		return builder.Build();
 	}

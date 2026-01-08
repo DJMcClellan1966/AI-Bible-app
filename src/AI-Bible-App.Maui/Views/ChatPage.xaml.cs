@@ -9,24 +9,20 @@ public partial class ChatPage : ContentPage, IQueryAttributable
 
     public ChatPage(ChatViewModel viewModel)
     {
+        System.Diagnostics.Debug.WriteLine("[DEBUG] ChatPage constructor START");
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = _viewModel;
+        System.Diagnostics.Debug.WriteLine("[DEBUG] ChatPage constructor END");
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        System.Diagnostics.Debug.WriteLine("[DEBUG] ApplyQueryAttributes called");
         if (query.ContainsKey("character") && query["character"] is BiblicalCharacter character)
         {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Initializing with character: {character.Name}");
             await _viewModel.InitializeAsync(character);
         }
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        
-        // Scroll to bottom when page appears
-        ChatScrollView.ScrollToAsync(0, ChatScrollView.ContentSize.Height, false);
     }
 }

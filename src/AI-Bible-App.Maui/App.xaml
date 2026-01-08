@@ -15,6 +15,7 @@
             <converters:StringEqualConverter x:Key="StringEqualConverter"/>
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
+            <converters:RatingOpacityConverter x:Key="RatingOpacityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

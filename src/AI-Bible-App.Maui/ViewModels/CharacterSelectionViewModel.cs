@@ -51,14 +51,29 @@ public partial class CharacterSelectionViewModel : BaseViewModel
     [RelayCommand]
     private async Task SelectCharacter(BiblicalCharacter character)
     {
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] SelectCharacter called with: {character?.Name}");
+        
         if (character == null || IsBusy)
-            return;
-
-        SelectedCharacter = character;
-        await _navigationService.NavigateToAsync("chat", new Dictionary<string, object>
         {
-            { "character", character }
-        });
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] SelectCharacter early exit - character null: {character == null}, IsBusy: {IsBusy}");
+            return;
+        }
+
+        try
+        {
+            SelectedCharacter = character;
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] About to navigate to chat page...");
+            await _navigationService.NavigateToAsync("chat", new Dictionary<string, object>
+            {
+                { "character", character }
+            });
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Navigation completed successfully");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Navigation FAILED: {ex}");
+            throw;
+        }
     }
 
     [RelayCommand]

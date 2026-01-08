@@ -49,7 +49,7 @@ public partial class PrayerViewModel : BaseViewModel
             // Only show alert if we have a valid page context
             if (Shell.Current?.CurrentPage != null)
             {
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Error", $"Failed to load prayers: {ex.Message}", "OK");
+                await Shell.Current.CurrentPage.DisplayAlert("Error", $"Failed to load prayers: {ex.Message}", "OK");
             }
         }
     }
@@ -72,7 +72,7 @@ public partial class PrayerViewModel : BaseViewModel
         {
             GeneratedPrayer = string.Empty;
             if (Shell.Current?.CurrentPage != null)
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Error", ex.Message, "OK");
+                await Shell.Current.CurrentPage.DisplayAlert("Error", ex.Message, "OK");
         }
         finally
         {
@@ -101,7 +101,7 @@ public partial class PrayerViewModel : BaseViewModel
 
             if (Shell.Current?.CurrentPage != null)
             {
-                await Shell.Current.CurrentPage.DisplayAlertAsync(
+                await Shell.Current.CurrentPage.DisplayAlert(
                     "Success",
                     "Prayer saved successfully!",
                     "OK");
@@ -114,7 +114,7 @@ public partial class PrayerViewModel : BaseViewModel
         catch (Exception ex)
         {
             if (Shell.Current?.CurrentPage != null)
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Error", ex.Message, "OK");
+                await Shell.Current.CurrentPage.DisplayAlert("Error", ex.Message, "OK");
         }
     }
 
@@ -126,7 +126,7 @@ public partial class PrayerViewModel : BaseViewModel
 
         if (Shell.Current?.CurrentPage != null)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync(
+            await Shell.Current.CurrentPage.DisplayAlert(
                 $"Prayer from {prayer.CreatedAt:MMMM d, yyyy}",
                 $"Topic: {prayer.Topic}\n\n{prayer.Content}",
                 "OK");

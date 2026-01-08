@@ -15,14 +15,16 @@ namespace AI_Bible_App.Infrastructure.Services;
 /// </summary>
 public class LocalAIService : IAIService
 {
-    private readonly OllamaApiClient _client;
+    private OllamaApiClient? _client;
     private readonly string _modelName;
+    private readonly string _ollamaUrl;
     private readonly ILogger<LocalAIService> _logger;
     private readonly IBibleRAGService? _ragService;
     private readonly bool _useRAG;
     private readonly Dictionary<string, string> _systemPromptCache = new();
     private readonly Dictionary<string, string> _ragContextCache = new();
     private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+    private readonly object _clientLock = new();
 
     public LocalAIService(
         IConfiguration configuration, 
@@ -32,26 +34,43 @@ public class LocalAIService : IAIService
         _logger = logger;
         _ragService = ragService;
         
-        var ollamaUrl = configuration["Ollama:Url"] ?? "http://localhost:11434";
+        _ollamaUrl = configuration["Ollama:Url"] ?? "http://localhost:11434";
         _modelName = configuration["Ollama:ModelName"] ?? "phi4";
         _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
         
-        // Create HttpClient with extended timeout for large model inference
-        var httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(5) // Phi-4 can take time for longer responses
-        };
+        // DON'T create HttpClient/OllamaApiClient in constructor - causes WinUI3 crashes
+        // Use lazy initialization instead
         
-        _client = new OllamaApiClient(httpClient, ollamaUrl)
-        {
-            SelectedModel = _modelName
-        };
-
         _logger.LogInformation(
-            "LocalAIService initialized with model: {ModelName} at {Url}, RAG: {RAGEnabled}", 
+            "LocalAIService configured for model: {ModelName} at {Url}, RAG: {RAGEnabled}", 
             _modelName, 
-            ollamaUrl, 
+            _ollamaUrl, 
             _useRAG && _ragService != null);
+    }
+
+    private OllamaApiClient GetClient()
+    {
+        if (_client == null)
+        {
+            lock (_clientLock)
+            {
+                if (_client == null)
+                {
+                    _logger.LogInformation("Lazy-initializing OllamaApiClient at {Url}...", _ollamaUrl);
+                    var httpClient = new HttpClient
+                    {
+                        BaseAddress = new Uri(_ollamaUrl),
+                        Timeout = TimeSpan.FromMinutes(5)
+                    };
+                    
+                    _client = new OllamaApiClient(httpClient, _ollamaUrl)
+                    {
+                        SelectedModel = _modelName
+                    };
+                }
+            }
+        }
+        return _client;
     }
 
     public async Task<string> GetChatResponseAsync(
@@ -117,7 +136,7 @@ public class LocalAIService : IAIService
 
             var responseText = string.Empty;
             
-            await foreach (var response in _client.ChatAsync(request, cancellationToken))
+            await foreach (var response in GetClient().ChatAsync(request, cancellationToken))
             {
                 if (response?.Message?.Content != null)
                 {
@@ -194,7 +213,7 @@ public class LocalAIService : IAIService
 
         _logger.LogDebug("Streaming chat response with {MessageCount} messages", messages.Count);
 
-        await foreach (var response in _client.ChatAsync(request, cancellationToken))
+        await foreach (var response in GetClient().ChatAsync(request, cancellationToken))
         {
             if (response?.Message?.Content != null)
             {
@@ -258,7 +277,7 @@ Keep prayers concise (2-3 paragraphs), use reverent language, and include releva
 
             var responseText = string.Empty;
             
-            await foreach (var response in _client.ChatAsync(request, cancellationToken))
+            await foreach (var response in GetClient().ChatAsync(request, cancellationToken))
             {
                 if (response?.Message?.Content != null)
                 {

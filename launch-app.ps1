@@ -49,12 +49,12 @@ while ($checkCount -lt 30) {
     if (-not $running) {
         Write-Host "`nApp crashed! Checking event log..." -ForegroundColor Red
         
-        $error = Get-EventLog -LogName Application -Newest 1 -EntryType Error -ErrorAction SilentlyContinue |
+        $crashEvent = Get-EventLog -LogName Application -Newest 1 -EntryType Error -ErrorAction SilentlyContinue |
                  Where-Object { $_.Source -eq "Application Error" -and $_.Message -like "*AI-Bible-App.Maui*" }
         
-        if ($error) {
+        if ($crashEvent) {
             Write-Host "Error Details:" -ForegroundColor Yellow
-            Write-Host $error.Message
+            Write-Host $crashEvent.Message
         }
         
         exit 1

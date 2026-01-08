@@ -71,6 +71,69 @@ A C# console application (originally using Azure OpenAI) that lets users:
    - Authentic character personalities
    - Not just reading the Bible — *talking with* its people
 
+6. **Chat History & Conversation Management** 🔲 **TODO**
+   - [ ] Chat History Page – List past conversations with date/character
+   - [ ] Resume Chat – Continue a previous conversation
+   - [ ] Delete Chat – Remove old conversations
+   - [ ] Export Conversations – Save chats externally (PDF/text)
+   - Backend: `JsonChatRepository` already saves sessions to `data/chat_sessions.json`
+   - Need: UI to browse, resume, and manage saved conversations
+
+7. **User Feedback & Rating System** ✅ **IN PROGRESS**
+   - [x] Added `Rating` property to `ChatMessage` model (-1, 0, +1)
+   - [x] Added `Feedback` property for optional text feedback
+   - [x] Added thumbs up/down buttons to AI messages in chat UI
+   - [x] Ratings saved with chat sessions for future fine-tuning
+   - [ ] Export rated conversations to JSONL format for training
+
+8. **Expand RAG with Additional Bible Sources** 🔲 **TODO**
+   
+   **Public Domain Sources (Can Add Now):**
+   | Source | Status | Type |
+   |--------|--------|------|
+   | KJV (1611) | ✅ Done | Translation |
+   | WEB (World English Bible) | ✅ Done | Translation |
+   | ASV (American Standard 1901) | 🔲 Add | Translation |
+   | Darby Translation | 🔲 Add | Translation |
+   | Young's Literal Translation | 🔲 Add | Translation |
+   | Matthew Henry Commentary | 🔲 Add | Commentary |
+   | Treasury of Scripture Knowledge | 🔲 Add | Cross-references |
+   | Strong's Concordance | 🔲 Add | Word study |
+   | Spurgeon's Sermons | 🔲 Add | Devotional |
+
+   **⚠️ Copyrighted (Require License):** NIV, ESV, NASB, NLT, CSB
+
+9. **Future: Train Custom Mini-LLM** 🔮 **ROADMAP**
+   
+   **Phase 1: Data Collection (Now)**
+   - [x] Store all conversations with timestamps
+   - [x] Add rating system (thumbs up/down)
+   - [ ] Add optional feedback text
+   - [ ] Export to JSONL training format
+   - Target: 500+ rated conversations
+   
+   **Phase 2: Data Preparation**
+   - [ ] Filter high-rated (thumbs up) responses
+   - [ ] Create instruction-following pairs
+   - [ ] Add character voice examples
+   - [ ] Validate scripture accuracy
+   
+   **Phase 3: Fine-Tuning**
+   - [ ] Choose base model (Phi-3, Llama 3.2, Qwen 2.5)
+   - [ ] Apply LoRA/QLoRA efficient fine-tuning
+   - [ ] Use DPO (Direct Preference Optimization) with ratings
+   - [ ] Test for character voice consistency
+   
+   **Phase 4: Deployment**
+   - [ ] Convert to GGUF/ONNX for local inference
+   - [ ] Package "AI-Bible-App-v1" model
+   - [ ] Optional Ollama Modelfile distribution
+   
+   **Required Resources:**
+   - GPU: RTX 3090+, or cloud (Colab Pro, RunPod)
+   - Tools: Hugging Face, Unsloth, Axolotl, LlamaFactory
+   - Data: 500+ quality conversation examples with ratings
+
 ### Technical Next Steps
 - Use **Microsoft Semantic Kernel** for RAG (preferred over LangChain.NET for .NET maturity)
 - Start with in-memory vector store → upgrade to persistent (Postgres/Qdrant)
