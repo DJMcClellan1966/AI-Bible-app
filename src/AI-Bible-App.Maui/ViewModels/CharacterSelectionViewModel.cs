@@ -27,8 +27,11 @@ public partial class CharacterSelectionViewModel : BaseViewModel
         _characterRepository = characterRepository;
         _navigationService = navigationService;
         Title = "Choose a Biblical Character";
-        
-        LoadCharactersAsync().ConfigureAwait(false);
+    }
+
+    public async Task InitializeAsync()
+    {
+        await LoadCharactersAsync();
     }
 
     private async Task LoadCharactersAsync()

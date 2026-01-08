@@ -36,13 +36,8 @@ public class LocalAIService : IAIService
         _modelName = configuration["Ollama:ModelName"] ?? "phi4";
         _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
         
-        // Create HttpClient with extended timeout and connection pooling
-        var httpClient = new HttpClient(new SocketsHttpHandler
-        {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5),
-            MaxConnectionsPerServer = 10
-        })
+        // Create HttpClient with extended timeout for large model inference
+        var httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(5) // Phi-4 can take time for longer responses
         };
