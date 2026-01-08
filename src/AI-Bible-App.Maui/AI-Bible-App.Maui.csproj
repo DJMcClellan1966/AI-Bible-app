@@ -19,7 +19,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>AI-Bible-App.Maui</ApplicationTitle>
+		<ApplicationTitle>Voices of Scripture</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.aibibleapp.maui</ApplicationId>

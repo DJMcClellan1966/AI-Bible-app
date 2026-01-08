@@ -29,7 +29,7 @@ public partial class InitializationViewModel : BaseViewModel
     {
         _ragService = ragService;
         _healthCheckService = healthCheckService;
-        Title = "AI Bible App";
+        Title = "Voices of Scripture";
     }
 
     public async Task InitializeAsync()

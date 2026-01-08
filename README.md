@@ -1,4 +1,4 @@
-# AI Bible App
+# Voices of Scripture
 
 A cross-platform application that allows users to interact with biblical figures through AI-powered conversations and receive personalized daily prayers - **now fully offline with Scripture-grounded responses and a beautiful modern UI**.
 

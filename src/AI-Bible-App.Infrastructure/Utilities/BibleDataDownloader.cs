@@ -17,7 +17,7 @@ public class BibleDataDownloader
     {
         _logger = logger;
         _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "AI-Bible-App/1.0");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "VoicesOfScripture/1.0");
     }
 
     /// <summary>
