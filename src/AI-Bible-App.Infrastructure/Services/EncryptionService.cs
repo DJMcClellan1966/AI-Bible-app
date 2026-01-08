@@ -93,6 +93,7 @@ public class EncryptionService : IEncryptionService
         return !string.IsNullOrEmpty(data) && data.StartsWith(EncryptionMarker);
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private byte[] GetOrCreateKey()
     {
         var keyPath = GetSecureStoragePath("encryption.key");
@@ -126,6 +127,7 @@ public class EncryptionService : IEncryptionService
         return aes.Key;
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private byte[] GetOrCreateIV()
     {
         var ivPath = GetSecureStoragePath("encryption.iv");
