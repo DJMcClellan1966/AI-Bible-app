@@ -32,7 +32,13 @@ public class LocalAIService : IAIService
         _modelName = configuration["Ollama:ModelName"] ?? "phi4";
         _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
         
-        _client = new OllamaApiClient(ollamaUrl)
+        // Create HttpClient with extended timeout for large model inference
+        var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(5) // Phi-4 can take time for longer responses
+        };
+        
+        _client = new OllamaApiClient(httpClient, ollamaUrl)
         {
             SelectedModel = _modelName
         };
