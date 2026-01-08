@@ -1,4 +1,5 @@
-﻿using AI_Bible_App.Core.Interfaces;
+﻿using AI_Bible_App.Console.Commands;
+using AI_Bible_App.Core.Interfaces;
 using AI_Bible_App.Core.Models;
 using AI_Bible_App.Infrastructure.Repositories;
 using AI_Bible_App.Infrastructure.Services;
@@ -12,6 +13,16 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        // Check for download command
+        if (args.Length > 0 && args[0] == "download-bible")
+        {
+            System.Console.WriteLine("Running Bible data downloader...");
+            var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<DownloadBibleDataCommand>();
+            var command = new DownloadBibleDataCommand(logger);
+            await command.ExecuteAsync();
+            return;
+        }
+        
         // Build configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
