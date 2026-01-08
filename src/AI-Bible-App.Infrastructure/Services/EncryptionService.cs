@@ -1,5 +1,6 @@
 using AI_Bible_App.Core.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -7,8 +8,9 @@ namespace AI_Bible_App.Infrastructure.Services;
 
 /// <summary>
 /// AES-256 encryption service for protecting sensitive user data
-/// Uses machine-specific key storage for enhanced security
+/// Uses machine-specific key storage for enhanced security (Windows DPAPI)
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class EncryptionService : IEncryptionService
 {
     private readonly ILogger<EncryptionService> _logger;
