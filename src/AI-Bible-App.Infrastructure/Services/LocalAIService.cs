@@ -6,6 +6,7 @@ using OllamaSharp;
 using OllamaSharp.Models;
 using OllamaSharp.Models.Chat;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace AI_Bible_App.Infrastructure.Services;
 
@@ -19,6 +20,9 @@ public class LocalAIService : IAIService
     private readonly ILogger<LocalAIService> _logger;
     private readonly IBibleRAGService? _ragService;
     private readonly bool _useRAG;
+    private readonly Dictionary<string, string> _systemPromptCache = new();
+    private readonly Dictionary<string, string> _ragContextCache = new();
+    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
 
     public LocalAIService(
         IConfiguration configuration, 
@@ -32,8 +36,13 @@ public class LocalAIService : IAIService
         _modelName = configuration["Ollama:ModelName"] ?? "phi4";
         _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
         
-        // Create HttpClient with extended timeout for large model inference
-        var httpClient = new HttpClient
+        // Create HttpClient with extended timeout and connection pooling
+        var httpClient = new HttpClient(new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5),
+            MaxConnectionsPerServer = 10
+        })
         {
             Timeout = TimeSpan.FromMinutes(5) // Phi-4 can take time for longer responses
         };
@@ -132,6 +141,70 @@ public class LocalAIService : IAIService
         {
             _logger.LogError(ex, "Error getting chat response from local AI model");
             throw;
+        }
+    }
+
+    public async IAsyncEnumerable<string> StreamChatResponseAsync(
+        BiblicalCharacter character, 
+        List<Core.Models.ChatMessage> conversationHistory, 
+        string userMessage,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var messages = new List<Message>
+        {
+            new Message
+            {
+                Role = ChatRole.System,
+                Content = GetCachedSystemPrompt(character)
+            }
+        };
+
+        // RAG: Retrieve relevant Bible verses if enabled (with caching)
+        if (_useRAG && _ragService != null && _ragService.IsInitialized)
+        {
+            var retrievedContext = await GetCachedRelevantScriptureContextAsync(userMessage, cancellationToken);
+            
+            if (!string.IsNullOrEmpty(retrievedContext))
+            {
+                messages.Add(new Message
+                {
+                    Role = ChatRole.System,
+                    Content = $"Relevant Scripture passages for context:\n{retrievedContext}\n\nUse these passages to inform your response when appropriate."
+                });
+            }
+        }
+
+        // Add conversation history (limit to last 10 messages)
+        foreach (var msg in conversationHistory.TakeLast(10))
+        {
+            messages.Add(new Message
+            {
+                Role = msg.Role == "user" ? ChatRole.User : ChatRole.Assistant,
+                Content = msg.Content
+            });
+        }
+
+        // Add current user message
+        messages.Add(new Message
+        {
+            Role = ChatRole.User,
+            Content = userMessage
+        });
+
+        var request = new ChatRequest
+        {
+            Model = _modelName,
+            Messages = messages
+        };
+
+        _logger.LogDebug("Streaming chat response with {MessageCount} messages", messages.Count);
+
+        await foreach (var response in _client.ChatAsync(request, cancellationToken))
+        {
+            if (response?.Message?.Content != null)
+            {
+                yield return response.Message.Content;
+            }
         }
     }
 
@@ -257,5 +330,55 @@ Keep prayers concise (2-3 paragraphs), use reverent language, and include releva
             _logger.LogError(ex, "Error retrieving Scripture context");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Get cached system prompt for character
+    /// </summary>
+    private string GetCachedSystemPrompt(BiblicalCharacter character)
+    {
+        var cacheKey = $"prompt_{character.Name}";
+        
+        if (!_systemPromptCache.TryGetValue(cacheKey, out var cachedPrompt))
+        {
+            cachedPrompt = character.SystemPrompt;
+            _systemPromptCache[cacheKey] = cachedPrompt;
+            _logger.LogDebug("Cached system prompt for {Character}", character.Name);
+        }
+        
+        return cachedPrompt;
+    }
+
+    /// <summary>
+    /// Get cached RAG context (expires after 30 minutes)
+    /// </summary>
+    private async Task<string?> GetCachedRelevantScriptureContextAsync(
+        string query, 
+        CancellationToken cancellationToken)
+    {
+        var cacheKey = $"rag_{query.GetHashCode()}";
+        
+        if (_ragContextCache.TryGetValue(cacheKey, out var cachedContext))
+        {
+            _logger.LogDebug("Using cached RAG context for query");
+            return cachedContext;
+        }
+
+        var context = await GetRelevantScriptureContextAsync(query, cancellationToken);
+        
+        if (!string.IsNullOrEmpty(context))
+        {
+            _ragContextCache[cacheKey] = context;
+            _logger.LogDebug("Cached RAG context for query");
+            
+            // Clean up old cache entries (simple LRU with 100 item limit)
+            if (_ragContextCache.Count > 100)
+            {
+                var oldestKey = _ragContextCache.Keys.First();
+                _ragContextCache.Remove(oldestKey);
+            }
+        }
+        
+        return context;
     }
 }

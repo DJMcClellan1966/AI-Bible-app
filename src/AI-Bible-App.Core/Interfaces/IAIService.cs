@@ -13,6 +13,11 @@ public interface IAIService
     Task<string> GetChatResponseAsync(BiblicalCharacter character, List<ChatMessage> conversationHistory, string userMessage, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Sends a chat message and streams response tokens in real-time
+    /// </summary>
+    IAsyncEnumerable<string> StreamChatResponseAsync(BiblicalCharacter character, List<ChatMessage> conversationHistory, string userMessage, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Generates a prayer based on the given topic
     /// </summary>
     Task<string> GeneratePrayerAsync(string topic, CancellationToken cancellationToken = default);

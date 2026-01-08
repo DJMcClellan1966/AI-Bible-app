@@ -26,6 +26,9 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private bool isAiTyping;
 
+    [ObservableProperty]
+    private bool useStreaming = true;
+
     public ChatViewModel(IAIService aiService, IChatRepository chatRepository)
     {
         _aiService = aiService;
@@ -80,19 +83,44 @@ public partial class ChatViewModel : BaseViewModel
             Messages.Add(chatMessage);
             _currentSession?.Messages.Add(chatMessage);
 
-            // Get AI response
-            var conversationHistory = Messages.ToList();
-            var response = await _aiService.GetChatResponseAsync(Character, conversationHistory, userMsg);
-
-            // Add AI response
-            var aiMessage = new ChatMessage
+            // Get AI response with streaming
+            if (UseStreaming)
             {
-                Role = "assistant",
-                Content = response,
-                Timestamp = DateTime.UtcNow
-            };
-            Messages.Add(aiMessage);
-            _currentSession?.Messages.Add(aiMessage);
+                // Create placeholder message for streaming
+                var aiMessage = new ChatMessage
+                {
+                    Role = "assistant",
+                    Content = "",
+                    Timestamp = DateTime.UtcNow
+                };
+                Messages.Add(aiMessage);
+
+                var conversationHistory = Messages.Take(Messages.Count - 1).ToList();
+                
+                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg))
+                {
+                    aiMessage.Content += token;
+                    // Trigger UI update
+                    OnPropertyChanged(nameof(Messages));
+                }
+
+                _currentSession?.Messages.Add(aiMessage);
+            }
+            else
+            {
+                // Traditional non-streaming response
+                var conversationHistory = Messages.ToList();
+                var response = await _aiService.GetChatResponseAsync(Character, conversationHistory, userMsg);
+
+                var aiMessage = new ChatMessage
+                {
+                    Role = "assistant",
+                    Content = response,
+                    Timestamp = DateTime.UtcNow
+                };
+                Messages.Add(aiMessage);
+                _currentSession?.Messages.Add(aiMessage);
+            }
 
             // Save session
             if (_currentSession != null)

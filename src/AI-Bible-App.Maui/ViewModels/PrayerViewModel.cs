@@ -30,8 +30,11 @@ public partial class PrayerViewModel : BaseViewModel
         _aiService = aiService;
         _prayerRepository = prayerRepository;
         Title = "Prayer Generator";
-        
-        LoadSavedPrayersAsync().ConfigureAwait(false);
+    }
+    
+    public async Task InitializeAsync()
+    {
+        await LoadSavedPrayersAsync();
     }
 
     private async Task LoadSavedPrayersAsync()
@@ -43,8 +46,11 @@ public partial class PrayerViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            // Only show alert if we have a valid page context
             if (Shell.Current?.CurrentPage != null)
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Error", ex.Message, "OK");
+            {
+                await Shell.Current.CurrentPage.DisplayAlertAsync("Error", $"Failed to load prayers: {ex.Message}", "OK");
+            }
         }
     }
 
