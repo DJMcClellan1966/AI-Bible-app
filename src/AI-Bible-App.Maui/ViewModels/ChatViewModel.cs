@@ -58,6 +58,9 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private bool isGeneratingPrayer;
 
+    [ObservableProperty]
+    private ChatMessage? latestAssistantMessage;
+
     public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IPrayerRepository prayerRepository, IDialogService dialogService, IContentModerationService moderationService, IUserService userService, ICharacterVoiceService voiceService, IConfiguration configuration)
     {
         _aiService = aiService;
@@ -94,6 +97,9 @@ public partial class ChatViewModel : BaseViewModel
                 _currentSession = existingSession;
                 _currentSession.StartedAt = DateTime.UtcNow; // Update to show it's active
                 Messages = new ObservableCollection<ChatMessage>(existingSession.Messages);
+                
+                // Set latest assistant message from history
+                LatestAssistantMessage = Messages.LastOrDefault(m => m.Role == "assistant");
             }
             else
             {
@@ -116,6 +122,7 @@ public partial class ChatViewModel : BaseViewModel
                 
                 Messages.Add(welcomeMessage);
                 _currentSession.Messages.Add(welcomeMessage);
+                LatestAssistantMessage = welcomeMessage;
             }
             
             System.Diagnostics.Debug.WriteLine($"[DEBUG] ChatViewModel.InitializeAsync END - messages: {Messages.Count}");
@@ -307,6 +314,12 @@ public partial class ChatViewModel : BaseViewModel
             }
             
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Streaming complete. Response length: {aiMessage.Content?.Length ?? 0}");
+            
+            // Update latest assistant message for action buttons
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                LatestAssistantMessage = aiMessage;
+            });
             
             // Request scroll to bottom after AI response
             ScrollToBottomRequested?.Invoke(this, EventArgs.Empty);
@@ -572,9 +585,15 @@ public partial class ChatViewModel : BaseViewModel
 
             await _reflectionRepository.SaveReflectionAsync(reflection);
 
-            await _dialogService.ShowAlertAsync(
+            var goToReflections = await _dialogService.ShowConfirmAsync(
                 "Saved! ✓",
-                "This response has been saved to your reflections. You can add your personal thoughts there.");
+                "This response has been saved to your reflections. Would you like to add your thoughts now?",
+                "Go to Reflections", "Stay Here");
+                
+            if (goToReflections)
+            {
+                await Shell.Current.GoToAsync("//reflections");
+            }
         }
         catch (Exception ex)
         {

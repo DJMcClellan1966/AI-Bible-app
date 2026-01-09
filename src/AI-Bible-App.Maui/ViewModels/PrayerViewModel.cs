@@ -177,9 +177,15 @@ public partial class PrayerViewModel : BaseViewModel
 
             await _reflectionRepository.SaveReflectionAsync(reflection);
 
-            await _dialogService.ShowAlertAsync(
+            var goToReflections = await _dialogService.ShowConfirmAsync(
                 "Saved! ✓",
-                "This prayer has been saved to your reflections. You can add your personal thoughts there.");
+                "This prayer has been saved to your reflections. Would you like to add your thoughts now?",
+                "Go to Reflections", "Stay Here");
+                
+            if (goToReflections)
+            {
+                await Shell.Current.GoToAsync("//reflections");
+            }
         }
         catch (Exception ex)
         {

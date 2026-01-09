@@ -15,6 +15,7 @@
             <converters:StringEqualConverter x:Key="StringEqualConverter"/>
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
             <converters:RatingOpacityConverter x:Key="RatingOpacityConverter"/>
             <converters:MessageToRatingTupleConverter x:Key="MessageToRatingTupleConverter"/>
             <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
