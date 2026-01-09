@@ -19,8 +19,16 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		
+		<!-- Performance: Enable trimming and AOT for Release builds -->
+		<PublishTrimmed Condition="'$(Configuration)' == 'Release'">true</PublishTrimmed>
+		<TrimMode Condition="'$(Configuration)' == 'Release'">partial</TrimMode>
+		<RunAOTCompilation Condition="'$(Configuration)' == 'Release' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">true</RunAOTCompilation>
+		
 		<!-- Enable compiled bindings with Source property to fix XC0025 warnings -->
 		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+		
+		<!-- Suppress XAML binding warnings for x:Reference in DataTemplates (false positives) -->
+		<NoWarn>$(NoWarn);XC0045</NoWarn>
 
 		<!-- Display name -->
 		<ApplicationTitle>Voices of Scripture</ApplicationTitle>

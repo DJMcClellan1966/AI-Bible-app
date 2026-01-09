@@ -26,6 +26,10 @@
             <converters:BoolToMicIconConverter x:Key="BoolToMicIconConverter"/>
             <converters:BoolToMicColorConverter x:Key="BoolToMicColorConverter"/>
             <converters:BoolToPlaceholderConverter x:Key="BoolToPlaceholderConverter"/>
+            <converters:BoolToVoiceLabelConverter x:Key="BoolToVoiceLabelConverter"/>
+            <converters:BoolToVoiceIconConverter x:Key="BoolToVoiceIconConverter"/>
+            <converters:BoolToYesNoConverter x:Key="BoolToYesNoConverter"/>
+            <converters:BoolToSetChangeConverter x:Key="BoolToSetChangeConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

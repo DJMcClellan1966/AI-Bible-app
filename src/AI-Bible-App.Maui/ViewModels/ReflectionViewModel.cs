@@ -13,6 +13,7 @@ public partial class ReflectionViewModel : BaseViewModel
 {
     private readonly IReflectionRepository _reflectionRepository;
     private readonly IDialogService _dialogService;
+    private readonly IUserService _userService;
 
     [ObservableProperty]
     private ObservableCollection<Reflection> reflections = new();
@@ -38,10 +39,11 @@ public partial class ReflectionViewModel : BaseViewModel
     [ObservableProperty]
     private bool showFavoritesOnly;
 
-    public ReflectionViewModel(IReflectionRepository reflectionRepository, IDialogService dialogService)
+    public ReflectionViewModel(IReflectionRepository reflectionRepository, IDialogService dialogService, IUserService userService)
     {
         _reflectionRepository = reflectionRepository;
         _dialogService = dialogService;
+        _userService = userService;
         Title = "My Reflections";
     }
 
@@ -141,16 +143,16 @@ public partial class ReflectionViewModel : BaseViewModel
             "Close",
             "Delete",
             reflection.IsFavorite ? "★ Remove from Favorites" : "☆ Add to Favorites",
-            "Edit Notes");
+            "Edit Notes",
+            "🔗 Share");
 
         if (action == "Edit Notes")
         {
-            var newNotes = await _dialogService.ShowPromptAsync(
-                "Edit Your Thoughts",
-                "Write your personal reflection:",
-                initialValue: reflection.PersonalNotes,
-                maxLength: 2000);
-
+            // Use full-screen notes editor for better experience
+            var editPage = new Views.EditNotesPage(reflection.Title, reflection.PersonalNotes);
+            await Shell.Current.Navigation.PushModalAsync(new NavigationPage(editPage));
+            
+            var newNotes = await editPage.GetResultAsync();
             if (newNotes != null)
             {
                 reflection.PersonalNotes = newNotes;
@@ -178,9 +180,79 @@ public partial class ReflectionViewModel : BaseViewModel
             await _reflectionRepository.SaveReflectionAsync(reflection);
             await LoadReflectionsAsync();
         }
+        else if (action == "🔗 Share")
+        {
+            await ShareReflectionAsync(reflection);
+        }
         
         IsEditing = false;
         SelectedReflection = null;
+    }
+
+    private async Task ShareReflectionAsync(Reflection reflection)
+    {
+        try
+        {
+            var allUsers = await _userService.GetAllUsersAsync();
+            var currentUserId = _userService.CurrentUser?.Id;
+            
+            // Filter out current user
+            var otherUsers = allUsers.Where(u => u.Id != currentUserId).ToList();
+            
+            if (otherUsers.Count == 0)
+            {
+                await _dialogService.ShowAlertAsync("No Other Users", "Create additional user profiles to share reflections with them.");
+                return;
+            }
+
+            // Build options list
+            var options = new List<string> { "📢 Share with Everyone" };
+            options.AddRange(otherUsers.Select(u => $"{u.AvatarEmoji ?? "👤"} {u.Name}"));
+            options.Add("🚫 Stop Sharing");
+            
+            var result = await _dialogService.ShowActionSheetAsync(
+                $"Share '{reflection.Title}'",
+                "Cancel",
+                null,
+                options.ToArray());
+
+            if (result == null || result == "Cancel") return;
+
+            if (result == "📢 Share with Everyone")
+            {
+                reflection.IsSharedWithAll = true;
+                reflection.SharedWithUserIds.Clear();
+                await _reflectionRepository.SaveReflectionAsync(reflection);
+                await _dialogService.ShowAlertAsync("Shared", "This reflection is now visible to all users on this device.");
+            }
+            else if (result == "🚫 Stop Sharing")
+            {
+                reflection.IsSharedWithAll = false;
+                reflection.SharedWithUserIds.Clear();
+                await _reflectionRepository.SaveReflectionAsync(reflection);
+                await _dialogService.ShowAlertAsync("Private", "This reflection is now private to you.");
+            }
+            else
+            {
+                // Find selected user
+                var selectedUser = otherUsers.FirstOrDefault(u => result.Contains(u.Name));
+                if (selectedUser != null)
+                {
+                    reflection.IsSharedWithAll = false;
+                    if (!reflection.SharedWithUserIds.Contains(selectedUser.Id))
+                    {
+                        reflection.SharedWithUserIds.Add(selectedUser.Id);
+                    }
+                    await _reflectionRepository.SaveReflectionAsync(reflection);
+                    await _dialogService.ShowAlertAsync("Shared", $"This reflection is now shared with {selectedUser.Name}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ERROR] Share reflection failed: {ex}");
+            await _dialogService.ShowAlertAsync("Error", $"Failed to share: {ex.Message}");
+        }
     }
 
     [RelayCommand]

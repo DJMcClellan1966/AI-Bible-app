@@ -10,4 +10,14 @@ public class ChatSession
     public List<ChatMessage> Messages { get; set; } = new();
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? EndedAt { get; set; }
+    
+    /// <summary>
+    /// User IDs this chat has been shared with (for family/group study)
+    /// </summary>
+    public List<string> SharedWithUserIds { get; set; } = new();
+    
+    /// <summary>
+    /// Whether this chat is shared with all users on the device
+    /// </summary>
+    public bool IsSharedWithAll { get; set; } = false;
 }

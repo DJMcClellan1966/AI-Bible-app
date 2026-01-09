@@ -55,15 +55,25 @@
                                     <controls:BibleLinkLabel LinkedText="{Binding Content}"
                                            TextColor="{DynamicResource TextColor}"
                                            LineBreakMode="WordWrap"/>
-                                    <!-- Rating and Save buttons -->
+                                    <!-- Voice, Rating and Save buttons -->
                                     <HorizontalStackLayout Spacing="15" HorizontalOptions="End">
+                                        <!-- Voice Play/Stop Toggle -->
+                                        <Button Text="🔊 Speak"
+                                                Command="{Binding Path=BindingContext.ToggleVoiceCommand, Source={x:Reference ThisPage}}"
+                                                CommandParameter="{Binding}"
+                                                BackgroundColor="{DynamicResource Primary}"
+                                                TextColor="White"
+                                                FontSize="12"
+                                                Padding="8,4"
+                                                CornerRadius="12"
+                                                HeightRequest="30"/>
                                         <!-- Thumbs Up -->
                                         <Label Text="👍"
                                                FontSize="14"
                                                Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='1'}">
                                             <Label.GestureRecognizers>
                                                 <TapGestureRecognizer 
-                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RateMessageCommand}"
+                                                    Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
                                                     CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}"/>
                                             </Label.GestureRecognizers>
                                         </Label>
@@ -73,7 +83,7 @@
                                                Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='-1'}">
                                             <Label.GestureRecognizers>
                                                 <TapGestureRecognizer 
-                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RateMessageCommand}"
+                                                    Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
                                                     CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='-1'}"/>
                                             </Label.GestureRecognizers>
                                         </Label>
@@ -84,8 +94,8 @@
                                                TextDecorations="Underline">
                                             <Label.GestureRecognizers>
                                                 <TapGestureRecognizer 
-                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SaveToReflectionsCommand}"
-                                                    CommandParameter="{Binding .}"/>
+                                                    Command="{Binding Path=BindingContext.SaveToReflectionsCommand, Source={x:Reference ThisPage}}"
+                                                    CommandParameter="{Binding}"/>
                                             </Label.GestureRecognizers>
                                         </Label>
                                     </HorizontalStackLayout>
@@ -204,8 +214,8 @@
             <Border Grid.Column="1"
                     Padding="10"
                     StrokeThickness="1"
-                    Stroke="{DynamicResource Gray300}"
-                    BackgroundColor="{DynamicResource InputBackground}">
+                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource InputBackground}, Dark={StaticResource InputBackgroundDark}}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="25"/>
                 </Border.StrokeShape>
@@ -213,6 +223,8 @@
                        Placeholder="{Binding IsListening, Converter={StaticResource BoolToPlaceholderConverter}}"
                        ReturnCommand="{Binding SendMessageCommand}"
                        IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}"
                        VerticalOptions="Center"/>
             </Border>
 

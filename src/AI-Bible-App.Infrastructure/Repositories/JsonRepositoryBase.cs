@@ -7,6 +7,7 @@ namespace AI_Bible_App.Infrastructure.Repositories;
 /// <summary>
 /// Base class for JSON file-based repositories with optional encryption support.
 /// Eliminates duplicate code across JsonChatRepository, JsonPrayerRepository, etc.
+/// Includes in-memory caching for performance.
 /// </summary>
 /// <typeparam name="T">The entity type to store</typeparam>
 public abstract class JsonRepositoryBase<T> where T : class
@@ -17,6 +18,13 @@ public abstract class JsonRepositoryBase<T> where T : class
     protected readonly IEncryptionService? EncryptionService;
     protected readonly IFileSecurityService? FileSecurityService;
     protected readonly ILogger Logger;
+    
+    // In-memory cache for faster repeated reads
+    private List<T>? _cache;
+    private DateTime _cacheTimestamp;
+    private DateTime _lastFileWrite;
+    private readonly object _cacheLock = new();
+    private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(5);
 
     protected JsonRepositoryBase(
         ILogger logger,
@@ -50,10 +58,17 @@ public abstract class JsonRepositoryBase<T> where T : class
     protected abstract string EntityTypeName { get; }
 
     /// <summary>
-    /// Loads all entities from the JSON file
+    /// Loads all entities from the JSON file with caching
     /// </summary>
     protected async Task<List<T>> LoadAllAsync()
     {
+        // Check cache first (quick check outside of lock)
+        var cachedResult = GetCachedDataIfValid();
+        if (cachedResult != null)
+        {
+            return new List<T>(cachedResult); // Return copy to prevent mutation
+        }
+
         if (!File.Exists(FilePath))
             return new List<T>();
 
@@ -67,12 +82,53 @@ public abstract class JsonRepositoryBase<T> where T : class
                 json = EncryptionService.Decrypt(json);
             }
             
-            return JsonSerializer.Deserialize<List<T>>(json, JsonOptions) ?? new List<T>();
+            var result = JsonSerializer.Deserialize<List<T>>(json, JsonOptions) ?? new List<T>();
+            
+            // Update cache (quick operation inside lock)
+            UpdateCache(result);
+            
+            return result;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load {EntityType}s", EntityTypeName);
             return new List<T>();
+        }
+    }
+    
+    private List<T>? GetCachedDataIfValid()
+    {
+        lock (_cacheLock)
+        {
+            if (_cache != null && 
+                DateTime.UtcNow - _cacheTimestamp < CacheExpiration &&
+                _lastFileWrite == GetFileLastWriteTime())
+            {
+                return _cache;
+            }
+        }
+        return null;
+    }
+    
+    private void UpdateCache(List<T> data)
+    {
+        lock (_cacheLock)
+        {
+            _cache = new List<T>(data);
+            _cacheTimestamp = DateTime.UtcNow;
+            _lastFileWrite = GetFileLastWriteTime();
+        }
+    }
+    
+    private DateTime GetFileLastWriteTime()
+    {
+        try
+        {
+            return File.Exists(FilePath) ? File.GetLastWriteTimeUtc(FilePath) : DateTime.MinValue;
+        }
+        catch
+        {
+            return DateTime.MinValue;
         }
     }
 
@@ -90,6 +146,9 @@ public abstract class JsonRepositoryBase<T> where T : class
         }
         
         await File.WriteAllTextAsync(FilePath, json);
+        
+        // Update cache
+        UpdateCache(entities);
         
         // Set restrictive permissions
         FileSecurityService?.SetRestrictivePermissions(FilePath);

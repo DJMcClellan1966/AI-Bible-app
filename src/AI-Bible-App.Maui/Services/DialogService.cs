@@ -38,12 +38,12 @@ public class DialogService : IDialogService
         return null;
     }
 
-    public async Task<string?> ShowPromptAsync(string title, string message, string? initialValue = null, int maxLength = -1, string accept = "OK", string cancel = "Cancel")
+    public async Task<string?> ShowPromptAsync(string title, string message, string? initialValue = null, int maxLength = -1, string accept = "OK", string cancel = "Cancel", Keyboard? keyboard = null)
     {
         var page = CurrentPage;
         if (page != null)
         {
-            return await page.DisplayPromptAsync(title, message, accept, cancel, initialValue: initialValue, maxLength: maxLength);
+            return await page.DisplayPromptAsync(title, message, accept, cancel, initialValue: initialValue, maxLength: maxLength, keyboard: keyboard ?? Keyboard.Default);
         }
         return null;
     }

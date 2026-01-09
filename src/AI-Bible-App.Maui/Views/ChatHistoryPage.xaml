@@ -73,18 +73,23 @@
                     <SwipeView>
                         <SwipeView.LeftItems>
                             <SwipeItems>
+                                <SwipeItem Text="Share"
+                                          IconImageSource="share"
+                                          BackgroundColor="{DynamicResource Secondary}"
+                                          Command="{Binding Path=BindingContext.ShareSessionCommand, Source={x:Reference ThisPage}}"
+                                          CommandParameter="{Binding}"/>
                                 <SwipeItem Text="Export"
                                           BackgroundColor="{DynamicResource Primary}"
-                                          Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ExportSessionCommand}"
-                                          CommandParameter="{Binding .}"/>
+                                          Command="{Binding Path=BindingContext.ExportSessionCommand, Source={x:Reference ThisPage}}"
+                                          CommandParameter="{Binding}"/>
                             </SwipeItems>
                         </SwipeView.LeftItems>
                         <SwipeView.RightItems>
                             <SwipeItems>
                                 <SwipeItem Text="Delete"
                                           BackgroundColor="{DynamicResource Danger}"
-                                          Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.DeleteSessionCommand}"
-                                          CommandParameter="{Binding .}"/>
+                                          Command="{Binding Path=BindingContext.DeleteSessionCommand, Source={x:Reference ThisPage}}"
+                                          CommandParameter="{Binding}"/>
                             </SwipeItems>
                         </SwipeView.RightItems>
                         

@@ -52,12 +52,46 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IBibleLookupService, BibleLookupService>();
 		builder.Services.AddSingleton<ITrainingDataExporter, TrainingDataExporter>();
 		
-		// AI Services - Hybrid (local Ollama + cloud Groq fallback)
+		// Text-to-speech for character voices
+		builder.Services.AddSingleton<Microsoft.Maui.Media.ITextToSpeech>(sp => TextToSpeech.Default);
+		builder.Services.AddSingleton<ICharacterVoiceService, CharacterVoiceService>();
+		
+		// User management and content moderation
+		builder.Services.AddSingleton<IUserRepository, JsonUserRepository>();
+		builder.Services.AddSingleton<IUserService, UserService>();
+		builder.Services.AddSingleton<IContentModerationService, ContentModerationService>();
+		
+		// Device capability detection for tiered AI
+		builder.Services.AddSingleton<IDeviceCapabilityService>(sp =>
+		{
+			var logger = sp.GetRequiredService<ILogger<DeviceCapabilityService>>();
+			// Inject MAUI connectivity check
+			Func<bool> networkCheck = () => 
+			{
+				try { return Connectivity.Current.NetworkAccess == NetworkAccess.Internet; }
+				catch { return true; }
+			};
+			return new DeviceCapabilityService(logger, networkCheck);
+		});
+		
+		// AI Services - Tiered system with fallback chain
+		// Tier 1: Local Ollama (desktop) / On-device LLamaSharp (capable mobile)
+		// Tier 2: Cloud API (Groq) - best quality when online  
+		// Tier 3: Cached responses - emergency fallback for limited devices
 		builder.Services.AddSingleton<LocalAIService>();
 		builder.Services.AddSingleton<GroqAIService>();
+		builder.Services.AddSingleton<CachedResponseAIService>();
+		
+		// On-device AI is only used on mobile, registered as null on desktop
+		// The HybridAIService accepts OnDeviceAIService? and handles null gracefully
+#pragma warning disable CS8634 // Nullable type doesn't match class constraint
+		builder.Services.AddSingleton<OnDeviceAIService?>(sp => (OnDeviceAIService?)null);
+#pragma warning restore CS8634
+		
 		builder.Services.AddSingleton<IAIService, HybridAIService>();
 
 		// Register ViewModels
+		builder.Services.AddTransient<UserSelectionViewModel>();
 		builder.Services.AddTransient<CharacterSelectionViewModel>();
 		builder.Services.AddTransient<ChatViewModel>();
 		builder.Services.AddTransient<ChatHistoryViewModel>();
@@ -66,6 +100,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<SettingsViewModel>();
 
 		// Register Pages
+		builder.Services.AddTransient<UserSelectionPage>();
 		builder.Services.AddTransient<CharacterSelectionPage>();
 		builder.Services.AddTransient<ChatPage>();
 		builder.Services.AddTransient<ChatHistoryPage>();

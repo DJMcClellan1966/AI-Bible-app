@@ -157,8 +157,8 @@
                                    VerticalOptions="Start">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer 
-                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ToggleFavoriteCommand}"
-                                        CommandParameter="{Binding .}"/>
+                                        Command="{Binding Path=BindingContext.ToggleFavoriteCommand, Source={x:Reference ThisPage}}"
+                                        CommandParameter="{Binding}"/>
                                 </Label.GestureRecognizers>
                             </Label>
                             

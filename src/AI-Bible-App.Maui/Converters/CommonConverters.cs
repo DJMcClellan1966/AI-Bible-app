@@ -148,3 +148,83 @@ public class IntToBoolConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Converts IsSpeaking bool to voice button label text.
+/// </summary>
+public class BoolToVoiceLabelConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isSpeaking)
+        {
+            return isSpeaking ? "Stop" : "Listen";
+        }
+        return "Listen";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts IsSpeaking bool to appropriate icon (speaker/stop).
+/// </summary>
+public class BoolToVoiceIconConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isSpeaking)
+        {
+            return isSpeaking ? "⏹️" : "🔊";
+        }
+        return "🔊";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts bool to "Yes" or "No" string.
+/// </summary>
+public class BoolToYesNoConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool boolValue)
+        {
+            return boolValue ? "Yes" : "No";
+        }
+        return "No";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts bool to "Change" or "Set" for PIN button text.
+/// </summary>
+public class BoolToSetChangeConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool hasPin)
+        {
+            return hasPin ? "Change" : "Set PIN";
+        }
+        return "Set PIN";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

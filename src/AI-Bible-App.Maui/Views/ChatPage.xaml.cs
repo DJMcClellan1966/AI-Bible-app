@@ -39,30 +39,37 @@ public partial class ChatPage : ContentPage, IQueryAttributable
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         System.Diagnostics.Debug.WriteLine("[DEBUG] ApplyQueryAttributes called");
-        if (query.ContainsKey("character") && query["character"] is BiblicalCharacter character)
+        try
         {
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] Initializing with character: {character.Name}");
-            
-            // Check if resuming an existing session
-            ChatSession? existingSession = null;
-            if (query.ContainsKey("session") && query["session"] is ChatSession session)
+            if (query.ContainsKey("character") && query["character"] is BiblicalCharacter character)
             {
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Resuming session: {session.Id}");
-                existingSession = session;
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Initializing with character: {character.Name}");
+                
+                // Check if resuming an existing session
+                ChatSession? existingSession = null;
+                if (query.ContainsKey("session") && query["session"] is ChatSession session)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Resuming session: {session.Id}");
+                    existingSession = session;
+                }
+                
+                // Check if starting a new chat (ignore existing session)
+                bool startNewChat = query.ContainsKey("newChat") && query["newChat"] is true;
+                if (startNewChat)
+                {
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] Starting new chat (ignoring existing session)");
+                    existingSession = null;
+                }
+                
+                await _viewModel.InitializeAsync(character, existingSession, startNewChat);
+                
+                // Scroll to bottom after loading messages
+                OnScrollToBottomRequested(this, EventArgs.Empty);
             }
-            
-            // Check if starting a new chat (ignore existing session)
-            bool startNewChat = query.ContainsKey("newChat") && query["newChat"] is true;
-            if (startNewChat)
-            {
-                System.Diagnostics.Debug.WriteLine("[DEBUG] Starting new chat (ignoring existing session)");
-                existingSession = null;
-            }
-            
-            await _viewModel.InitializeAsync(character, existingSession);
-            
-            // Scroll to bottom after loading messages
-            OnScrollToBottomRequested(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ERROR] ApplyQueryAttributes failed: {ex}");
         }
     }
 }

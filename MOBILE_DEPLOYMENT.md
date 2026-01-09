@@ -172,7 +172,7 @@ Edit `appsettings.json`:
 ```json
 {
   "Groq": {
-    "ApiKey": "gsk_your_api_key_here",
+    "ApiKey": "YOUR_GROQ_API_KEY_HERE",
     "ModelName": "llama-3.1-8b-instant"
   }
 }

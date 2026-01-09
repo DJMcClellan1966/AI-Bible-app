@@ -48,6 +48,16 @@ public class Reflection
     /// Whether this is a favorite/starred reflection
     /// </summary>
     public bool IsFavorite { get; set; }
+    
+    /// <summary>
+    /// User IDs this reflection has been shared with
+    /// </summary>
+    public List<string> SharedWithUserIds { get; set; } = new();
+    
+    /// <summary>
+    /// Whether this reflection is shared with all users on the device
+    /// </summary>
+    public bool IsSharedWithAll { get; set; } = false;
 }
 
 public enum ReflectionType

@@ -52,6 +52,14 @@ Speak naturally in first person, sharing wisdom from your biblical experiences. 
                     { "Personality", "Passionate, Humble, Poetic" },
                     { "KnownFor", "Defeating Goliath, Writing Psalms, United Kingdom" },
                     { "KeyVirtues", "Courage, Repentance, Worship" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 0.9f,  // Slightly deeper - kingly, mature voice
+                    Rate = 0.95f,  // Measured pace - thoughtful king
+                    Volume = 1.0f,
+                    Description = "Kingly and poetic - a shepherd-warrior's voice",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -101,6 +109,14 @@ Speak as a teacher and spiritual father, combining theological insight with past
                     { "Personality", "Intellectual, Bold, Compassionate" },
                     { "KnownFor", "Missionary Journeys, Epistles, Conversion on Damascus Road" },
                     { "KeyVirtues", "Faith, Perseverance, Grace" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 0.95f,  // Authoritative teacher's voice
+                    Rate = 1.05f,   // Slightly faster - passionate preacher
+                    Volume = 1.0f,
+                    Description = "Bold apostle - scholarly yet passionate",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -143,6 +159,14 @@ Speak as one who has seen God's power and heard His voice. Balance the weight of
                     { "Personality", "Humble, Courageous, Intercessor" },
                     { "KnownFor", "Ten Commandments, Exodus from Egypt, Parting Red Sea" },
                     { "KeyVirtues", "Leadership, Obedience, Faithfulness" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 0.85f,  // Deep, authoritative - elder prophet
+                    Rate = 0.9f,    // Slower, deliberate - weight of the Law
+                    Volume = 1.0f,
+                    Description = "Ancient prophet - solemn and commanding",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -186,6 +210,14 @@ Speak with maternal warmth and spiritual depth. Share about trusting God even wh
                     { "Personality", "Humble, Faithful, Contemplative" },
                     { "KnownFor", "Mother of Jesus, Magnificat, Witness to Christ's Life" },
                     { "KeyVirtues", "Surrender, Trust, Purity" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.15f,  // Higher, gentle - feminine voice
+                    Rate = 0.9f,    // Gentle, contemplative pace
+                    Volume = 0.95f,
+                    Description = "Gentle mother - warm and contemplative",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -230,6 +262,14 @@ Speak as one who has been both headstrong and humbled, who failed Jesus yet was 
                     { "Personality", "Bold, Passionate, Restored" },
                     { "KnownFor", "Walked on Water, Denied Jesus, Led Early Church" },
                     { "KeyVirtues", "Courage, Repentance, Leadership" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 0.95f,  // Slightly deeper - rugged fisherman
+                    Rate = 1.1f,    // Faster - impetuous, passionate
+                    Volume = 1.0f,
+                    Description = "Bold fisherman - passionate and earnest",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -272,6 +312,14 @@ Speak as one who understands that God places people in positions for His purpose
                     { "Personality", "Courageous, Strategic, Graceful" },
                     { "KnownFor", "Saving the Jews, 'For Such a Time as This'" },
                     { "KeyVirtues", "Courage, Wisdom, Sacrifice" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.1f,   // Higher - royal feminine voice
+                    Rate = 0.95f,   // Measured - strategic queen
+                    Volume = 1.0f,
+                    Description = "Royal and graceful - a queen's measured wisdom",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -316,6 +364,14 @@ Speak as one who knew Jesus most intimately, who emphasizes abiding in Christ an
                     { "Personality", "Loving, Contemplative, Visionary" },
                     { "KnownFor", "Gospel of John, Book of Revelation, Jesus's Beloved Friend" },
                     { "KeyVirtues", "Love, Intimacy with God, Faithfulness" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.0f,   // Normal - gentle yet profound
+                    Rate = 0.85f,   // Slower - contemplative, mystical
+                    Volume = 0.95f,
+                    Description = "Gentle beloved - contemplative and loving",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -359,6 +415,14 @@ Speak as one who has gained wisdom through both revelation and hard experience. 
                     { "Personality", "Wise, Reflective, Practical" },
                     { "KnownFor", "Wisdom, Temple Builder, Proverbs" },
                     { "KeyVirtues", "Wisdom, Discernment, Justice" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 0.9f,   // Deeper - wise elder king
+                    Rate = 0.85f,   // Slower - deliberate wisdom
+                    Volume = 1.0f,
+                    Description = "Wise king - measured and profound",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -399,6 +463,14 @@ Speak as one who knows the cost and reward of radical commitment. Encourage fait
                     { "Personality", "Loyal, Humble, Determined" },
                     { "KnownFor", "Loyalty to Naomi, Kinsman-Redeemer Story, Ancestor of Jesus" },
                     { "KeyVirtues", "Faithfulness, Humility, Devotion" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.1f,   // Higher - young woman's voice
+                    Rate = 0.95f,   // Gentle pace - humble servant
+                    Volume = 0.95f,
+                    Description = "Humble devotion - gentle and determined",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -440,6 +512,14 @@ Speak as a confident woman of God who exercised authority in a male-dominated wo
                     { "Personality", "Authoritative, Nurturing, Prophetic" },
                     { "KnownFor", "Only Female Judge, Victory Song, 'Mother in Israel'" },
                     { "KeyVirtues", "Leadership, Courage, Faith" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.05f,  // Slightly higher - confident woman
+                    Rate = 1.0f,    // Normal - authoritative
+                    Volume = 1.0f,
+                    Description = "Prophetic leader - confident and commanding",
+                    Locale = "en-US"
                 }
             },
             new BiblicalCharacter
@@ -482,6 +562,14 @@ Speak as one who has wept and received, who has given your most precious gift ba
                     { "Personality", "Prayerful, Faithful, Surrendered" },
                     { "KnownFor", "Persistent Prayer, Mother of Samuel, Song of Praise" },
                     { "KeyVirtues", "Prayer, Trust, Sacrifice" }
+                },
+                Voice = new VoiceConfig
+                {
+                    Pitch = 1.1f,   // Higher - gentle woman's voice
+                    Rate = 0.9f,    // Slower - prayerful, thoughtful
+                    Volume = 0.9f,
+                    Description = "Prayerful mother - tender and surrendered",
+                    Locale = "en-US"
                 }
             }
         };

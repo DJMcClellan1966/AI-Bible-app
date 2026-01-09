@@ -229,7 +229,26 @@ public class LocalAIService : IAIService
 
         _logger.LogDebug("Streaming chat response with {MessageCount} messages", messages.Count);
 
-        await foreach (var response in GetClient().ChatAsync(request, cancellationToken))
+        IAsyncEnumerable<ChatResponseStream?> responseStream;
+        string? initError = null;
+        try
+        {
+            responseStream = GetClient().ChatAsync(request, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start chat stream");
+            initError = ex.Message;
+            responseStream = null!;
+        }
+
+        if (initError != null)
+        {
+            yield return $"__ERROR__:{initError}";
+            yield break;
+        }
+
+        await foreach (var response in responseStream)
         {
             if (response?.Message?.Content != null)
             {

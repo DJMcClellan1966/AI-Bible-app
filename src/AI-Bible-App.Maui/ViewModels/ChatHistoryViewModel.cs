@@ -14,6 +14,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
     private readonly IChatRepository _chatRepository;
     private readonly ICharacterRepository _characterRepository;
     private readonly IDialogService _dialogService;
+    private readonly IUserService _userService;
 
     [ObservableProperty]
     private ObservableCollection<ChatHistoryItem> chatSessions = new();
@@ -27,11 +28,12 @@ public partial class ChatHistoryViewModel : BaseViewModel
     [ObservableProperty]
     private ChatHistoryItem? selectedSession;
 
-    public ChatHistoryViewModel(IChatRepository chatRepository, ICharacterRepository characterRepository, IDialogService dialogService)
+    public ChatHistoryViewModel(IChatRepository chatRepository, ICharacterRepository characterRepository, IDialogService dialogService, IUserService userService)
     {
         _chatRepository = chatRepository;
         _characterRepository = characterRepository;
         _dialogService = dialogService;
+        _userService = userService;
         Title = "Chat History";
     }
 
@@ -202,6 +204,75 @@ public partial class ChatHistoryViewModel : BaseViewModel
             {
                 await Shell.Current.CurrentPage.DisplayAlert("Error", $"Failed to export: {ex.Message}", "OK");
             }
+        }
+    }
+
+    [RelayCommand]
+    private async Task ShareSession(ChatHistoryItem item)
+    {
+        if (item?.Session == null) return;
+
+        try
+        {
+            var allUsers = await _userService.GetAllUsersAsync();
+            var currentUserId = _userService.CurrentUser?.Id;
+            
+            // Filter out current user
+            var otherUsers = allUsers.Where(u => u.Id != currentUserId).ToList();
+            
+            if (otherUsers.Count == 0)
+            {
+                await _dialogService.ShowAlertAsync("No Other Users", "Create additional user profiles to share chats with them.");
+                return;
+            }
+
+            // Build options list
+            var options = new List<string> { "📢 Share with Everyone" };
+            options.AddRange(otherUsers.Select(u => $"{u.AvatarEmoji ?? "👤"} {u.Name}"));
+            options.Add("🚫 Stop Sharing");
+            
+            var result = await _dialogService.ShowActionSheetAsync(
+                $"Share chat with {item.CharacterName}",
+                "Cancel",
+                null,
+                options.ToArray());
+
+            if (result == null || result == "Cancel") return;
+
+            if (result == "📢 Share with Everyone")
+            {
+                item.Session.IsSharedWithAll = true;
+                item.Session.SharedWithUserIds.Clear();
+                await _chatRepository.SaveSessionAsync(item.Session);
+                await _dialogService.ShowAlertAsync("Shared", "This chat is now visible to all users on this device.");
+            }
+            else if (result == "🚫 Stop Sharing")
+            {
+                item.Session.IsSharedWithAll = false;
+                item.Session.SharedWithUserIds.Clear();
+                await _chatRepository.SaveSessionAsync(item.Session);
+                await _dialogService.ShowAlertAsync("Private", "This chat is now private to you.");
+            }
+            else
+            {
+                // Find selected user
+                var selectedUser = otherUsers.FirstOrDefault(u => result.Contains(u.Name));
+                if (selectedUser != null)
+                {
+                    item.Session.IsSharedWithAll = false;
+                    if (!item.Session.SharedWithUserIds.Contains(selectedUser.Id))
+                    {
+                        item.Session.SharedWithUserIds.Add(selectedUser.Id);
+                    }
+                    await _chatRepository.SaveSessionAsync(item.Session);
+                    await _dialogService.ShowAlertAsync("Shared", $"This chat is now shared with {selectedUser.Name}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ERROR] Share failed: {ex}");
+            await _dialogService.ShowAlertAsync("Error", $"Failed to share: {ex.Message}");
         }
     }
 

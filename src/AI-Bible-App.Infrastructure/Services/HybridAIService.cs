@@ -8,46 +8,44 @@ using System.Runtime.InteropServices;
 namespace AI_Bible_App.Infrastructure.Services;
 
 /// <summary>
-/// Hybrid AI service that tries local Ollama first, falls back to Groq cloud.
-/// On mobile platforms (iOS/Android), defaults to cloud since Ollama can't run locally.
+/// Tiered hybrid AI service that selects the best AI backend based on device capabilities:
+/// - Tier 1: Local Ollama (desktop) or On-device LLamaSharp (capable mobile)
+/// - Tier 2: Cloud API (Groq) - best quality when online
+/// - Tier 3: Cached responses - emergency fallback for limited devices
 /// </summary>
 public class HybridAIService : IAIService
 {
     private readonly LocalAIService _localService;
     private readonly GroqAIService _cloudService;
+    private readonly OnDeviceAIService? _onDeviceService;
+    private readonly CachedResponseAIService _cachedService;
+    private readonly IDeviceCapabilityService _capabilityService;
     private readonly ILogger<HybridAIService> _logger;
-    private readonly bool _preferLocal;
+    private readonly AIBackendRecommendation _recommendation;
     private readonly bool _cloudAvailable;
 
     public HybridAIService(
         LocalAIService localService,
         GroqAIService cloudService,
+        OnDeviceAIService? onDeviceService,
+        CachedResponseAIService cachedService,
+        IDeviceCapabilityService capabilityService,
         IConfiguration configuration,
         ILogger<HybridAIService> logger)
     {
         _localService = localService;
         _cloudService = cloudService;
+        _onDeviceService = onDeviceService;
+        _cachedService = cachedService;
+        _capabilityService = capabilityService;
         _logger = logger;
+        
         _cloudAvailable = _cloudService.IsAvailable;
-        
-        // Detect mobile platform - on iOS/Android, prefer cloud since Ollama can't run locally
-        var isMobilePlatform = IsMobilePlatform();
-        var configPreferLocal = configuration["AI:PreferLocal"]?.ToLower() != "false";
-        
-        // On mobile, default to cloud unless explicitly set to prefer local (e.g., for custom server)
-        _preferLocal = isMobilePlatform ? false : configPreferLocal;
+        _recommendation = _capabilityService.GetRecommendedBackend();
         
         _logger.LogInformation(
-            "HybridAIService initialized. Platform: {Platform}, PreferLocal: {PreferLocal}, CloudAvailable: {CloudAvailable}",
-            isMobilePlatform ? "Mobile" : "Desktop", _preferLocal, _cloudAvailable);
-    }
-    
-    private static bool IsMobilePlatform()
-    {
-        // Check OS platform to detect mobile
-        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
-            return true;
-        return false;
+            "HybridAIService initialized. Primary: {Primary}, Fallback: {Fallback}, CloudAvailable: {CloudAvailable}",
+            _recommendation.Primary, _recommendation.Fallback, _cloudAvailable);
     }
 
     public async Task<string> GetChatResponseAsync(
@@ -56,36 +54,54 @@ public class HybridAIService : IAIService
         string userMessage,
         CancellationToken cancellationToken = default)
     {
-        if (_preferLocal)
+        var hasNetwork = _capabilityService.HasNetworkConnectivity();
+        
+        // Try primary backend
+        try
         {
-            try
-            {
-                _logger.LogDebug("Trying local AI service...");
-                return await _localService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-            }
-            catch (Exception ex) when (_cloudAvailable)
-            {
-                _logger.LogWarning(ex, "Local AI failed, falling back to cloud");
-                return await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-            }
+            return await TryBackendAsync(
+                _recommendation.Primary, 
+                character, conversationHistory, userMessage, 
+                hasNetwork, cancellationToken);
         }
-        else if (_cloudAvailable)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogDebug("Trying cloud AI service...");
-                return await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Cloud AI failed, falling back to local");
-                return await _localService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-            }
+            _logger.LogWarning(ex, "Primary backend {Backend} failed, trying fallback", _recommendation.Primary);
         }
-        else
+
+        // Try fallback backend
+        try
         {
-            return await _localService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
+            return await TryBackendAsync(
+                _recommendation.Fallback, 
+                character, conversationHistory, userMessage, 
+                hasNetwork, cancellationToken);
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Fallback backend {Backend} failed, using emergency cached responses", _recommendation.Fallback);
+        }
+
+        // Emergency: cached responses
+        return await _cachedService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
+    }
+
+    private async Task<string> TryBackendAsync(
+        AIBackendType backend,
+        BiblicalCharacter character,
+        List<ChatMessage> conversationHistory,
+        string userMessage,
+        bool hasNetwork,
+        CancellationToken cancellationToken)
+    {
+        return backend switch
+        {
+            AIBackendType.LocalOllama => await _localService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken),
+            AIBackendType.OnDevice when _onDeviceService != null => await _onDeviceService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken),
+            AIBackendType.Cloud when hasNetwork && _cloudAvailable => await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken),
+            AIBackendType.Cached => await _cachedService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken),
+            _ => throw new InvalidOperationException($"Backend {backend} not available")
+        };
     }
 
     public async IAsyncEnumerable<string> StreamChatResponseAsync(
@@ -94,35 +110,82 @@ public class HybridAIService : IAIService
         string userMessage,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // For hybrid, prefer local streaming, fallback to cloud non-streaming
-        if (_preferLocal)
+        var hasNetwork = _capabilityService.HasNetworkConnectivity();
+        
+        // Determine which backend to use for streaming
+        var backend = _recommendation.Primary;
+        if (backend == AIBackendType.Cloud && (!hasNetwork || !_cloudAvailable))
         {
-            var localFailed = false;
-            var errorMessage = "";
-            
+            backend = _recommendation.Fallback;
+        }
+        if (backend == AIBackendType.OnDevice && _onDeviceService == null)
+        {
+            backend = hasNetwork && _cloudAvailable ? AIBackendType.Cloud : AIBackendType.Cached;
+        }
+
+        var errorOccurred = false;
+        var errorMessage = "";
+
+        // Try primary streaming
+        if (backend == AIBackendType.LocalOllama)
+        {
             await foreach (var token in TryLocalStreamAsync(character, conversationHistory, userMessage, cancellationToken))
             {
                 if (token.StartsWith("__ERROR__:"))
                 {
-                    localFailed = true;
+                    errorOccurred = true;
                     errorMessage = token.Replace("__ERROR__:", "");
                     break;
                 }
                 yield return token;
             }
-
-            if (localFailed && _cloudAvailable)
+        }
+        else if (backend == AIBackendType.OnDevice && _onDeviceService != null)
+        {
+            await foreach (var token in TryOnDeviceStreamAsync(character, conversationHistory, userMessage, cancellationToken))
             {
-                _logger.LogWarning("Local streaming failed: {Error}, falling back to cloud", errorMessage);
-                var response = await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-                yield return response;
+                if (token.StartsWith("__ERROR__:"))
+                {
+                    errorOccurred = true;
+                    errorMessage = token.Replace("__ERROR__:", "");
+                    break;
+                }
+                yield return token;
             }
+        }
+        else if (backend == AIBackendType.Cloud && hasNetwork && _cloudAvailable)
+        {
+            var response = await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
+            yield return response;
+            yield break;
         }
         else
         {
-            // Cloud first
-            var response = await GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
-            yield return response;
+            // Cached fallback
+            await foreach (var token in _cachedService.StreamChatResponseAsync(character, conversationHistory, userMessage, cancellationToken))
+            {
+                yield return token;
+            }
+            yield break;
+        }
+
+        // Handle errors by falling back
+        if (errorOccurred)
+        {
+            _logger.LogWarning("Streaming failed: {Error}, falling back", errorMessage);
+            
+            if (hasNetwork && _cloudAvailable)
+            {
+                var response = await _cloudService.GetChatResponseAsync(character, conversationHistory, userMessage, cancellationToken);
+                yield return response;
+            }
+            else
+            {
+                await foreach (var token in _cachedService.StreamChatResponseAsync(character, conversationHistory, userMessage, cancellationToken))
+                {
+                    yield return token;
+                }
+            }
         }
     }
 
@@ -167,33 +230,90 @@ public class HybridAIService : IAIService
         }
     }
 
-    public async Task<string> GeneratePrayerAsync(string topic, CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<string> TryOnDeviceStreamAsync(
+        BiblicalCharacter character,
+        List<ChatMessage> conversationHistory,
+        string userMessage,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (_preferLocal)
+        if (_onDeviceService == null)
         {
-            try
-            {
-                return await _localService.GeneratePrayerAsync(topic, cancellationToken);
-            }
-            catch (Exception ex) when (_cloudAvailable)
-            {
-                _logger.LogWarning(ex, "Local prayer generation failed, falling back to cloud");
-                return await _cloudService.GeneratePrayerAsync(topic, cancellationToken);
-            }
+            yield return "__ERROR__:On-device service not available";
+            yield break;
         }
-        else if (_cloudAvailable)
+
+        var enumerator = _onDeviceService.StreamChatResponseAsync(character, conversationHistory, userMessage, cancellationToken)
+            .GetAsyncEnumerator(cancellationToken);
+        
+        string? errorMessage = null;
+        
+        while (true)
         {
+            string? current = null;
+            bool hasNext = false;
+            
             try
             {
-                return await _cloudService.GeneratePrayerAsync(topic, cancellationToken);
+                hasNext = await enumerator.MoveNextAsync();
+                if (hasNext)
+                    current = enumerator.Current;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Cloud prayer generation failed, falling back to local");
-                return await _localService.GeneratePrayerAsync(topic, cancellationToken);
+                errorMessage = ex.Message;
+                break;
             }
+            
+            if (!hasNext)
+                break;
+                
+            if (current != null)
+                yield return current;
         }
         
-        return await _localService.GeneratePrayerAsync(topic, cancellationToken);
+        if (errorMessage != null)
+        {
+            yield return $"__ERROR__:{errorMessage}";
+        }
+    }
+
+    public async Task<string> GeneratePrayerAsync(string topic, CancellationToken cancellationToken = default)
+    {
+        var hasNetwork = _capabilityService.HasNetworkConnectivity();
+
+        // Try primary
+        try
+        {
+            return _recommendation.Primary switch
+            {
+                AIBackendType.LocalOllama => await _localService.GeneratePrayerAsync(topic, cancellationToken),
+                AIBackendType.OnDevice when _onDeviceService != null => await _onDeviceService.GeneratePrayerAsync(topic, cancellationToken),
+                AIBackendType.Cloud when hasNetwork && _cloudAvailable => await _cloudService.GeneratePrayerAsync(topic, cancellationToken),
+                _ => await _cachedService.GeneratePrayerAsync(topic, cancellationToken)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Primary prayer generation failed");
+        }
+
+        // Try fallback
+        try
+        {
+            return _recommendation.Fallback switch
+            {
+                AIBackendType.LocalOllama => await _localService.GeneratePrayerAsync(topic, cancellationToken),
+                AIBackendType.OnDevice when _onDeviceService != null => await _onDeviceService.GeneratePrayerAsync(topic, cancellationToken),
+                AIBackendType.Cloud when hasNetwork && _cloudAvailable => await _cloudService.GeneratePrayerAsync(topic, cancellationToken),
+                _ => await _cachedService.GeneratePrayerAsync(topic, cancellationToken)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Fallback prayer generation failed");
+        }
+
+        // Emergency cached
+        return await _cachedService.GeneratePrayerAsync(topic, cancellationToken);
     }
 }

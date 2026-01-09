@@ -36,41 +36,48 @@ public partial class InitializationViewModel : BaseViewModel
     {
         try
         {
-            // Check Ollama health
-            StatusMessage = "Checking Ollama service...";
-            Progress = 0.1;
-
-            var health = await _healthCheckService.GetHealthStatusAsync();
-            if (!health.IsHealthy)
-            {
-                HasError = true;
-                ErrorMessage = health.ErrorMessage;
-                IsInitializing = false;
-                return;
-            }
-
+            // Quick startup - just verify AI service is reachable
+            StatusMessage = "Connecting...";
             Progress = 0.3;
 
-            // Initialize RAG if not already done
-            if (!_ragService.IsInitialized)
+            // Run health check with short timeout for fast startup
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            try
             {
-                StatusMessage = "Loading Bible verses...";
-                Progress = 0.5;
-
-                await _ragService.InitializeAsync();
-
-                StatusMessage = "Indexing Scripture...";
-                Progress = 0.9;
+                var healthTask = _healthCheckService.GetHealthStatusAsync();
+                var completedTask = await Task.WhenAny(healthTask, Task.Delay(3000, cts.Token));
+                
+                if (completedTask == healthTask)
+                {
+                    var health = await healthTask;
+                    if (!health.IsHealthy)
+                    {
+                        // Don't block - user can still use app with cloud fallback
+                        System.Diagnostics.Debug.WriteLine($"[WARN] Local AI not available: {health.ErrorMessage}");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Health check timed out - continue anyway
+                System.Diagnostics.Debug.WriteLine("[WARN] Health check timed out, continuing...");
             }
 
+            Progress = 0.7;
+            
+            // LAZY RAG: Don't initialize here - let it load on first chat
+            // This saves 2-5 seconds on startup
+            // RAG will be initialized in LocalAIService.GetChatResponseAsync when needed
+            
             Progress = 1.0;
             StatusMessage = "Ready!";
             IsInitializing = false;
         }
         catch (Exception ex)
         {
-            HasError = true;
-            ErrorMessage = $"Initialization failed: {ex.Message}";
+            // Don't block on errors - app can still work with cloud AI
+            System.Diagnostics.Debug.WriteLine($"[ERROR] Initialization: {ex.Message}");
+            HasError = false; // Changed: don't show error, just continue
             IsInitializing = false;
         }
     }

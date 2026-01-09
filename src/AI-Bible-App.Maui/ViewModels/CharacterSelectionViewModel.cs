@@ -119,10 +119,20 @@ public partial class CharacterSelectionViewModel : BaseViewModel
 
         try
         {
+            IsBusy = true;
             SelectedCharacter = character;
             
             // Check if there's an existing session for this character
-            var existingSession = await _chatRepository.GetLatestSessionForCharacterAsync(character.Id);
+            ChatSession? existingSession = null;
+            try
+            {
+                existingSession = await _chatRepository.GetLatestSessionForCharacterAsync(character.Id);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Error loading session: {ex.Message}");
+            }
+            
             var navParams = new Dictionary<string, object> { { "character", character } };
             
             if (existingSession != null && existingSession.Messages.Count > 0)
@@ -157,8 +167,12 @@ public partial class CharacterSelectionViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] Navigation FAILED: {ex}");
-            throw;
+            System.Diagnostics.Debug.WriteLine($"[ERROR] SelectCharacter FAILED: {ex}");
+            await _dialogService.ShowAlertAsync("Error", $"Failed to open chat: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

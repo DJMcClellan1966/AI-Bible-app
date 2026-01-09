@@ -24,5 +24,5 @@ public interface IDialogService
     /// <summary>
     /// Shows a prompt dialog for text input
     /// </summary>
-    Task<string?> ShowPromptAsync(string title, string message, string? initialValue = null, int maxLength = -1, string accept = "OK", string cancel = "Cancel");
+    Task<string?> ShowPromptAsync(string title, string message, string? initialValue = null, int maxLength = -1, string accept = "OK", string cancel = "Cancel", Keyboard? keyboard = null);
 }

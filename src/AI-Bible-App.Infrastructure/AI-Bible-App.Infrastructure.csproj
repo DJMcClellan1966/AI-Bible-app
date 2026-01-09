@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="OllamaSharp" Version="4.0.17" />
+    <PackageReference Include="LLamaSharp" Version="0.18.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.18.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.34.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.34.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.34.0-alpha" />
