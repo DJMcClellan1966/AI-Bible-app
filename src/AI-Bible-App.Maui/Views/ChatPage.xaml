@@ -55,49 +55,74 @@
                                     <controls:BibleLinkLabel LinkedText="{Binding Content}"
                                            TextColor="{DynamicResource TextColor}"
                                            LineBreakMode="WordWrap"/>
-                                    <!-- Voice, Rating and Save buttons -->
-                                    <HorizontalStackLayout Spacing="15" HorizontalOptions="End">
-                                        <!-- Voice Play/Stop Toggle -->
-                                        <Button Text="🔊 Speak"
-                                                Command="{Binding Path=BindingContext.ToggleVoiceCommand, Source={x:Reference ThisPage}}"
-                                                CommandParameter="{Binding}"
-                                                BackgroundColor="{DynamicResource Primary}"
-                                                TextColor="White"
-                                                FontSize="12"
-                                                Padding="8,4"
-                                                CornerRadius="12"
-                                                HeightRequest="30"/>
+                                    <!-- Rating, Speak and Save buttons -->
+                                    <HorizontalStackLayout Spacing="4" HorizontalOptions="End">
                                         <!-- Thumbs Up -->
-                                        <Label Text="👍"
-                                               FontSize="14"
-                                               Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='1'}">
-                                            <Label.GestureRecognizers>
-                                                <TapGestureRecognizer 
-                                                    Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
-                                                    CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}"/>
-                                            </Label.GestureRecognizers>
-                                        </Label>
+                                        <ImageButton Source="thumbs_up.png"
+                                                     WidthRequest="32"
+                                                     HeightRequest="32"
+                                                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#404040}"
+                                                     CornerRadius="16"
+                                                     Padding="4"
+                                                     Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='1'}"
+                                                     Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
+                                                     CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}">
+                                            <ImageButton.Source>
+                                                <FontImageSource Glyph="👍" FontFamily="SegoeUI" Size="18" Color="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"/>
+                                            </ImageButton.Source>
+                                        </ImageButton>
                                         <!-- Thumbs Down -->
-                                        <Label Text="👎"
-                                               FontSize="14"
-                                               Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='-1'}">
-                                            <Label.GestureRecognizers>
-                                                <TapGestureRecognizer 
-                                                    Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
-                                                    CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='-1'}"/>
-                                            </Label.GestureRecognizers>
-                                        </Label>
+                                        <ImageButton WidthRequest="32"
+                                                     HeightRequest="32"
+                                                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#404040}"
+                                                     CornerRadius="16"
+                                                     Padding="4"
+                                                     Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='-1'}"
+                                                     Command="{Binding Path=BindingContext.RateMessageCommand, Source={x:Reference ThisPage}}"
+                                                     CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='-1'}">
+                                            <ImageButton.Source>
+                                                <FontImageSource Glyph="👎" FontFamily="SegoeUI" Size="18" Color="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"/>
+                                            </ImageButton.Source>
+                                        </ImageButton>
+                                        <!-- Speak -->
+                                        <ImageButton WidthRequest="32"
+                                                     HeightRequest="32"
+                                                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#404040}"
+                                                     CornerRadius="16"
+                                                     Padding="4"
+                                                     ToolTipProperties.Text="Read aloud"
+                                                     Command="{Binding Path=BindingContext.ToggleVoiceCommand, Source={x:Reference ThisPage}}"
+                                                     CommandParameter="{Binding}">
+                                            <ImageButton.Source>
+                                                <FontImageSource Glyph="🔊" FontFamily="SegoeUI" Size="18" Color="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"/>
+                                            </ImageButton.Source>
+                                        </ImageButton>
                                         <!-- Save -->
-                                        <Label Text="📝 Save"
-                                               FontSize="11"
-                                               TextColor="{DynamicResource Primary}"
-                                               TextDecorations="Underline">
-                                            <Label.GestureRecognizers>
-                                                <TapGestureRecognizer 
-                                                    Command="{Binding Path=BindingContext.SaveToReflectionsCommand, Source={x:Reference ThisPage}}"
-                                                    CommandParameter="{Binding}"/>
-                                            </Label.GestureRecognizers>
-                                        </Label>
+                                        <ImageButton WidthRequest="32"
+                                                     HeightRequest="32"
+                                                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#404040}"
+                                                     CornerRadius="16"
+                                                     Padding="4"
+                                                     ToolTipProperties.Text="Save to reflections"
+                                                     Command="{Binding Path=BindingContext.SaveToReflectionsCommand, Source={x:Reference ThisPage}}"
+                                                     CommandParameter="{Binding}">
+                                            <ImageButton.Source>
+                                                <FontImageSource Glyph="📝" FontFamily="SegoeUI" Size="18" Color="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"/>
+                                            </ImageButton.Source>
+                                        </ImageButton>
+                                        <!-- Prayer -->
+                                        <ImageButton WidthRequest="32"
+                                                     HeightRequest="32"
+                                                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#404040}"
+                                                     CornerRadius="16"
+                                                     Padding="4"
+                                                     ToolTipProperties.Text="Generate a prayer"
+                                                     Command="{Binding Path=BindingContext.GeneratePrayerFromMessageCommand, Source={x:Reference ThisPage}}"
+                                                     CommandParameter="{Binding}">
+                                            <ImageButton.Source>
+                                                <FontImageSource Glyph="🙏" FontFamily="SegoeUI" Size="18" Color="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"/>
+                                            </ImageButton.Source>
+                                        </ImageButton>
                                     </HorizontalStackLayout>
                                 </VerticalStackLayout>
                             </Border>
@@ -194,24 +219,11 @@
 
         <!-- Input Area -->
         <Grid Grid.Row="2" 
-              ColumnDefinitions="Auto,*,Auto"
+              ColumnDefinitions="*,Auto"
               Padding="15,10"
               BackgroundColor="{DynamicResource CardBackground}">
             
-            <!-- Microphone Button -->
-            <Button Grid.Column="0"
-                    Text="{Binding IsListening, Converter={StaticResource BoolToMicIconConverter}}"
-                    Command="{Binding ToggleSpeechToTextCommand}"
-                    IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
-                    WidthRequest="50"
-                    HeightRequest="50"
-                    CornerRadius="25"
-                    FontSize="20"
-                    Margin="0,0,10,0"
-                    BackgroundColor="{Binding IsListening, Converter={StaticResource BoolToMicColorConverter}}"
-                    TextColor="White"/>
-            
-            <Border Grid.Column="1"
+            <Border Grid.Column="0"
                     Padding="10"
                     StrokeThickness="1"
                     Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
@@ -220,7 +232,7 @@
                     <RoundRectangle CornerRadius="25"/>
                 </Border.StrokeShape>
                 <Entry Text="{Binding UserMessage}"
-                       Placeholder="{Binding IsListening, Converter={StaticResource BoolToPlaceholderConverter}}"
+                       Placeholder="Type a message..."
                        ReturnCommand="{Binding SendMessageCommand}"
                        IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
                        TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
@@ -229,7 +241,7 @@
             </Border>
 
             <!-- Send Button (visible when not typing) -->
-            <Button Grid.Column="2"
+            <Button Grid.Column="1"
                     Text="Send"
                     Command="{Binding SendMessageCommand}"
                     IsVisible="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
@@ -241,15 +253,15 @@
                     TextColor="White"/>
             
             <!-- Stop Button (visible when AI is typing) -->
-            <Button Grid.Column="2"
-                    Text="⏹"
+            <Button Grid.Column="1"
+                    Text="⏹ Stop"
                     Command="{Binding CancelResponseCommand}"
                     IsVisible="{Binding IsAiTyping}"
                     Margin="10,0,0,0"
                     WidthRequest="80"
                     HeightRequest="50"
                     CornerRadius="25"
-                    FontSize="20"
+                    FontSize="14"
                     BackgroundColor="#E74C3C"
                     TextColor="White"/>
         </Grid>

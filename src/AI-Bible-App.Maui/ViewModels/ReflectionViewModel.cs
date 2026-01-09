@@ -87,6 +87,33 @@ public partial class ReflectionViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private async Task FilterByType(string? typeString)
+    {
+        SearchText = string.Empty;
+        ShowFavoritesOnly = false;
+        
+        if (string.IsNullOrEmpty(typeString))
+        {
+            FilterType = null;
+        }
+        else if (typeString.ToLower() == "favorites")
+        {
+            FilterType = null;
+            ShowFavoritesOnly = true;
+        }
+        else if (Enum.TryParse<ReflectionType>(typeString, true, out var type))
+        {
+            FilterType = type;
+        }
+        else
+        {
+            FilterType = null;
+        }
+        
+        await LoadReflectionsAsync();
+    }
+
+    [RelayCommand]
     private async Task CreateNewReflection()
     {
         var reflection = new Reflection

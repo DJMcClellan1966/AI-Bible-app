@@ -21,6 +21,7 @@ public class HybridAIService : IAIService
     private readonly CachedResponseAIService _cachedService;
     private readonly IDeviceCapabilityService _capabilityService;
     private readonly ILogger<HybridAIService> _logger;
+    private readonly ResilienceHelper _resilience;
     private readonly AIBackendRecommendation _recommendation;
     private readonly bool _cloudAvailable;
 
@@ -39,6 +40,7 @@ public class HybridAIService : IAIService
         _cachedService = cachedService;
         _capabilityService = capabilityService;
         _logger = logger;
+        _resilience = new ResilienceHelper(logger, maxRetries: 2, baseDelayMs: 500);
         
         _cloudAvailable = _cloudService.IsAvailable;
         _recommendation = _capabilityService.GetRecommendedBackend();

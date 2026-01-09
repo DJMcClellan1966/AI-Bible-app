@@ -1,5 +1,6 @@
 using AI_Bible_App.Core.Interfaces;
 using AI_Bible_App.Core.Models;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace AI_Bible_App.Maui.Services;
@@ -36,8 +37,18 @@ public class BibleLookupResult
 public class BibleLookupService : IBibleLookupService
 {
     private readonly IAIService _aiService;
-    private List<BibleVerse>? _cachedVerses;
     private readonly string _bibleDataPath;
+    
+    // Lazy loading: verses loaded on first access
+    private readonly Lazy<Task<List<BibleVerse>>> _versesLoader;
+    private List<BibleVerse>? _cachedVerses;
+    
+    // Performance: Index by book for O(1) lookup
+    private Dictionary<string, List<BibleVerse>>? _versesByBook;
+    
+    // LRU cache for frequently accessed passages
+    private readonly ConcurrentDictionary<string, BibleLookupResult> _passageCache = new();
+    private const int MaxCacheSize = 100;
 
     // Book name normalization mapping
     private static readonly Dictionary<string, string> BookNameMap = new(StringComparer.OrdinalIgnoreCase)
@@ -116,6 +127,9 @@ public class BibleLookupService : IBibleLookupService
     {
         _aiService = aiService;
         _bibleDataPath = Path.Combine(AppContext.BaseDirectory, "Data", "Bible");
+        
+        // Lazy load: Bible data only loaded when first needed
+        _versesLoader = new Lazy<Task<List<BibleVerse>>>(() => LoadVersesInternalAsync());
     }
 
     public async Task<BibleLookupResult> LookupPassageAsync(string book, int chapter, int verseStart, int? verseEnd = null)
@@ -127,11 +141,20 @@ public class BibleLookupService : IBibleLookupService
                 : $"{book} {chapter}:{verseStart}"
         };
 
+        // Check cache first
+        var cacheKey = $"{book}:{chapter}:{verseStart}:{verseEnd ?? verseStart}";
+        if (_passageCache.TryGetValue(cacheKey, out var cachedResult))
+        {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Cache hit for {cacheKey}");
+            return cachedResult;
+        }
+
         try
         {
-            await LoadVersesAsync();
+            // Ensure verses are loaded (lazy load on first access)
+            await EnsureVersesLoadedAsync();
 
-            if (_cachedVerses == null || _cachedVerses.Count == 0)
+            if (_versesByBook == null || _versesByBook.Count == 0)
             {
                 return result;
             }
@@ -139,11 +162,16 @@ public class BibleLookupService : IBibleLookupService
             // Normalize book name
             var normalizedBook = NormalizeBookName(book);
 
-            // Find matching verses
+            // Use indexed lookup (O(1) for book lookup)
+            if (!_versesByBook.TryGetValue(normalizedBook.ToLowerInvariant(), out var bookVerses))
+            {
+                return result;
+            }
+
+            // Find matching verses within the book
             var endVerse = verseEnd ?? verseStart;
-            var matchingVerses = _cachedVerses
-                .Where(v => v.Book.Equals(normalizedBook, StringComparison.OrdinalIgnoreCase)
-                         && v.Chapter == chapter
+            var matchingVerses = bookVerses
+                .Where(v => v.Chapter == chapter
                          && v.Verse >= verseStart
                          && v.Verse <= endVerse)
                 .OrderBy(v => v.Verse)
@@ -155,6 +183,15 @@ public class BibleLookupService : IBibleLookupService
                 result.Verses = matchingVerses;
                 result.Translation = matchingVerses.First().Translation;
                 result.Text = string.Join(" ", matchingVerses.Select(v => $"[{v.Verse}] {v.Text}"));
+                
+                // Add to cache (limit cache size)
+                if (_passageCache.Count >= MaxCacheSize)
+                {
+                    // Remove first item (simple eviction)
+                    var firstKey = _passageCache.Keys.FirstOrDefault();
+                    if (firstKey != null) _passageCache.TryRemove(firstKey, out _);
+                }
+                _passageCache[cacheKey] = result;
             }
         }
         catch (Exception ex)
@@ -163,6 +200,21 @@ public class BibleLookupService : IBibleLookupService
         }
 
         return result;
+    }
+
+    private async Task EnsureVersesLoadedAsync()
+    {
+        if (_cachedVerses == null)
+        {
+            _cachedVerses = await _versesLoader.Value;
+            
+            // Build book index for fast lookups
+            _versesByBook = _cachedVerses
+                .GroupBy(v => v.Book.ToLowerInvariant())
+                .ToDictionary(g => g.Key, g => g.ToList());
+                
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Built index for {_versesByBook.Count} books");
+        }
     }
 
     public async Task<string> GetContextualSummaryAsync(string reference, string verseText)
@@ -264,16 +316,16 @@ Only include references that are actually about this character. If the character
         return references;
     }
 
-    private async Task LoadVersesAsync()
+    private async Task<List<BibleVerse>> LoadVersesInternalAsync()
     {
-        if (_cachedVerses != null)
-            return;
-
-        _cachedVerses = new List<BibleVerse>();
+        var verses = new List<BibleVerse>();
 
         // Try loading as MAUI bundled assets first (correct for packaged apps)
         var bibleFiles = new[] { "web.json", "kjv.json", "asv.json" };
         bool loadedFromBundle = false;
+
+        System.Diagnostics.Debug.WriteLine("[DEBUG] Starting lazy load of Bible data...");
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         foreach (var fileName in bibleFiles)
         {
@@ -283,12 +335,12 @@ Only include references that are actually about this character. If the character
                 using var stream = await FileSystem.OpenAppPackageFileAsync($"Data/Bible/{fileName}");
                 using var reader = new StreamReader(stream);
                 var json = await reader.ReadToEndAsync();
-                var verses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
-                if (verses != null)
+                var loadedVerses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
+                if (loadedVerses != null)
                 {
-                    _cachedVerses.AddRange(verses);
+                    verses.AddRange(loadedVerses);
                     loadedFromBundle = true;
-                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {verses.Count} verses from bundled {fileName}");
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {loadedVerses.Count} verses from bundled {fileName}");
                 }
             }
             catch (Exception ex)
@@ -306,11 +358,11 @@ Only include references that are actually about this character. If the character
                 try
                 {
                     var json = await File.ReadAllTextAsync(file);
-                    var verses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
-                    if (verses != null)
+                    var loadedVerses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
+                    if (loadedVerses != null)
                     {
-                        _cachedVerses.AddRange(verses);
-                        System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {verses.Count} verses from {file}");
+                        verses.AddRange(loadedVerses);
+                        System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {loadedVerses.Count} verses from {file}");
                     }
                 }
                 catch (Exception ex)
@@ -320,7 +372,10 @@ Only include references that are actually about this character. If the character
             }
         }
 
-        System.Diagnostics.Debug.WriteLine($"[DEBUG] Total verses loaded: {_cachedVerses.Count}");
+        sw.Stop();
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] Total verses loaded: {verses.Count} in {sw.ElapsedMilliseconds}ms");
+        
+        return verses;
     }
 
     private static string NormalizeBookName(string book)

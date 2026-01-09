@@ -53,8 +53,13 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ITrainingDataExporter, TrainingDataExporter>();
 		
 		// Text-to-speech for character voices
+		// Use platform-specific implementation on Windows for better compatibility
+#if WINDOWS
+		builder.Services.AddSingleton<ICharacterVoiceService, AI_Bible_App.Maui.Platforms.Windows.Services.WindowsSpeechService>();
+#else
 		builder.Services.AddSingleton<Microsoft.Maui.Media.ITextToSpeech>(sp => TextToSpeech.Default);
 		builder.Services.AddSingleton<ICharacterVoiceService, CharacterVoiceService>();
+#endif
 		
 		// User management and content moderation
 		builder.Services.AddSingleton<IUserRepository, JsonUserRepository>();

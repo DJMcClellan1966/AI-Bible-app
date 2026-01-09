@@ -1,5 +1,6 @@
 using AI_Bible_App.Core.Interfaces;
 using AI_Bible_App.Core.Models;
+using AI_Bible_App.Infrastructure.Services;
 using AI_Bible_App.Maui.Services;
 using CommunityToolkit.Maui.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,6 +19,7 @@ public partial class ChatViewModel : BaseViewModel
     private readonly IChatRepository _chatRepository;
     private readonly IBibleLookupService _bibleLookupService;
     private readonly IReflectionRepository _reflectionRepository;
+    private readonly IPrayerRepository _prayerRepository;
     private readonly IDialogService _dialogService;
     private readonly IContentModerationService _moderationService;
     private readonly IUserService _userService;
@@ -53,12 +55,16 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private string? speakingMessageId;
 
-    public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IDialogService dialogService, IContentModerationService moderationService, IUserService userService, ICharacterVoiceService voiceService, IConfiguration configuration)
+    [ObservableProperty]
+    private bool isGeneratingPrayer;
+
+    public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IPrayerRepository prayerRepository, IDialogService dialogService, IContentModerationService moderationService, IUserService userService, ICharacterVoiceService voiceService, IConfiguration configuration)
     {
         _aiService = aiService;
         _chatRepository = chatRepository;
         _bibleLookupService = bibleLookupService;
         _reflectionRepository = reflectionRepository;
+        _prayerRepository = prayerRepository;
         _dialogService = dialogService;
         _moderationService = moderationService;
         _userService = userService;
@@ -252,25 +258,51 @@ public partial class ChatViewModel : BaseViewModel
             var conversationHistory = Messages.Where(m => m != aiMessage).ToList();
             
             // Stream the response on background thread, update UI on main thread
+            // Use ConfigureAwait(false) to not block UI thread while waiting for tokens
             try
             {
-                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg, cancellationToken))
+                var tokenBuffer = new System.Text.StringBuilder();
+                var lastUpdateTime = DateTime.UtcNow;
+                
+                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg, cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested) break;
                     
-                    // Update UI on main thread
+                    tokenBuffer.Append(token);
+                    
+                    // Batch UI updates for better responsiveness (every 50ms or 5+ tokens)
+                    var now = DateTime.UtcNow;
+                    if ((now - lastUpdateTime).TotalMilliseconds >= 50 || tokenBuffer.Length >= 5)
+                    {
+                        var bufferedContent = tokenBuffer.ToString();
+                        tokenBuffer.Clear();
+                        lastUpdateTime = now;
+                        
+                        // Update UI on main thread
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            aiMessage.Content += bufferedContent;
+                        });
+                    }
+                }
+                
+                // Flush any remaining tokens
+                if (tokenBuffer.Length > 0)
+                {
+                    var remaining = tokenBuffer.ToString();
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        aiMessage.Content += token;
+                        aiMessage.Content += remaining;
                     });
                 }
             }
             catch (Exception streamEx)
             {
                 System.Diagnostics.Debug.WriteLine($"[DEBUG] Streaming ERROR: {streamEx}");
+                var userFriendlyError = UserFriendlyErrors.GetUserFriendlyMessage(streamEx);
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    aiMessage.Content += $"\n\n[Connection error - please try again]";
+                    aiMessage.Content += $"\n\n⚠️ {userFriendlyError}";
                 });
             }
             
@@ -325,10 +357,11 @@ public partial class ChatViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] SendMessage ERROR: {ex}");
+            var userFriendlyError = UserFriendlyErrors.GetUserFriendlyMessage(ex);
             var errorMessage = new ChatMessage
             {
                 Role = "assistant",
-                Content = $"Error: {ex.Message}",
+                Content = $"⚠️ {userFriendlyError}",
                 Timestamp = DateTime.UtcNow
             };
             Messages.Add(errorMessage);
@@ -349,6 +382,16 @@ public partial class ChatViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("[DEBUG] Cancelling AI response...");
             _aiResponseCancellationTokenSource.Cancel();
+            
+            // Immediately update UI to show response was stopped
+            IsAiTyping = false;
+            
+            // Add cancellation indicator to the last message if it's from the assistant
+            var lastMessage = Messages.LastOrDefault();
+            if (lastMessage != null && lastMessage.Role == "assistant" && !lastMessage.Content.EndsWith("[Stopped]"))
+            {
+                lastMessage.Content += "\n\n[Stopped]";
+            }
         }
     }
 
@@ -536,6 +579,80 @@ public partial class ChatViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Error saving reflection: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task GeneratePrayerFromMessage(ChatMessage? message)
+    {
+        if (message == null || string.IsNullOrEmpty(message.Content) || Character == null) return;
+
+        // Find the user's question that prompted this response
+        var messageIndex = Messages.IndexOf(message);
+        string userQuestion = "";
+        if (messageIndex > 0)
+        {
+            for (int i = messageIndex - 1; i >= 0; i--)
+            {
+                if (Messages[i].Role == "user")
+                {
+                    userQuestion = Messages[i].Content;
+                    break;
+                }
+            }
+        }
+
+        try
+        {
+            IsGeneratingPrayer = true;
+
+            // Create a prayer prompt in the character's voice
+            var prayerTopic = $@"Generate a heartfelt prayer in the voice and style of {Character.Name}, a {Character.Description}.
+
+The prayer should be inspired by this conversation:
+User's question: {userQuestion}
+{Character.Name}'s response: {message.Content.Substring(0, Math.Min(500, message.Content.Length))}...
+
+Write the prayer as if {Character.Name} is leading the reader in prayer, using first-person plural (""we"", ""us"", ""our"") to include the reader. 
+Draw from {Character.Name}'s biblical experiences and wisdom. Keep the prayer 2-3 paragraphs, ending with Amen.";
+
+            var prayer = await _aiService.GeneratePrayerAsync(prayerTopic);
+
+            if (string.IsNullOrEmpty(prayer))
+            {
+                await _dialogService.ShowAlertAsync("Error", "Could not generate prayer. Please try again.");
+                return;
+            }
+
+            // Show the prayer in a dialog with option to save
+            var savePrayer = await _dialogService.ShowConfirmAsync(
+                $"🙏 Prayer from {Character.Name}",
+                prayer,
+                "Save Prayer", "Close");
+
+            if (savePrayer)
+            {
+                // Save to prayers
+                var prayerEntity = new Prayer
+                {
+                    Topic = $"Prayer with {Character.Name}",
+                    Content = prayer,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _prayerRepository.SavePrayerAsync(prayerEntity);
+
+                await _dialogService.ShowAlertAsync("Saved! ✓", "Prayer saved to your prayer history.");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Error generating prayer: {ex.Message}");
+            var userFriendlyError = UserFriendlyErrors.GetUserFriendlyMessage(ex);
+            await _dialogService.ShowAlertAsync("Error", userFriendlyError);
+        }
+        finally
+        {
+            IsGeneratingPrayer = false;
         }
     }
 }

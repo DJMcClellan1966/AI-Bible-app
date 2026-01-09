@@ -52,7 +52,8 @@
                                Padding="15,5"
                                HorizontalOptions="Start">
             <Button Text="All"
-                    Command="{Binding ClearFilterCommand}"
+                    Command="{Binding FilterByTypeCommand}"
+                    CommandParameter=""
                     HeightRequest="32"
                     CornerRadius="16"
                     FontSize="12"
@@ -60,7 +61,7 @@
                     BackgroundColor="{DynamicResource Primary}"
                     TextColor="White"/>
             <Button Text="⭐ Favorites"
-                    Command="{Binding LoadReflectionsCommand}"
+                    Command="{Binding FilterByTypeCommand}"
                     CommandParameter="favorites"
                     HeightRequest="32"
                     CornerRadius="16"
@@ -69,27 +70,23 @@
                     BackgroundColor="{DynamicResource Gray200}"
                     TextColor="{DynamicResource TextColor}"/>
             <Button Text="💬 Chats"
+                    Command="{Binding FilterByTypeCommand}"
+                    CommandParameter="Chat"
                     HeightRequest="32"
                     CornerRadius="16"
                     FontSize="12"
                     Padding="12,0"
                     BackgroundColor="{DynamicResource Gray200}"
-                    TextColor="{DynamicResource TextColor}">
-                <Button.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding LoadReflectionsCommand}" CommandParameter="Chat"/>
-                </Button.GestureRecognizers>
-            </Button>
+                    TextColor="{DynamicResource TextColor}"/>
             <Button Text="🙏 Prayers"
+                    Command="{Binding FilterByTypeCommand}"
+                    CommandParameter="Prayer"
                     HeightRequest="32"
                     CornerRadius="16"
                     FontSize="12"
                     Padding="12,0"
                     BackgroundColor="{DynamicResource Gray200}"
-                    TextColor="{DynamicResource TextColor}">
-                <Button.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding LoadReflectionsCommand}" CommandParameter="Prayer"/>
-                </Button.GestureRecognizers>
-            </Button>
+                    TextColor="{DynamicResource TextColor}"/>
         </HorizontalStackLayout>
 
         <!-- Empty State -->

@@ -314,6 +314,43 @@ The application uses Microsoft.Extensions.Logging for structured logging:
 
 ## Future Enhancements
 
+### 📋 Improvement Recommendations
+
+#### High Priority (Quick Wins)
+- [ ] **1. Full Bible Reader** - Add a complete Bible reading mode with chapter navigation
+- [ ] **2. Search Functionality** - Search across conversations and Bible text
+- [ ] **3. Export/Share** - Export conversations as PDF or share to social media
+- [ ] **4. Daily Verse** - Home screen widget with daily verse and character insight
+- [ ] **5. More Characters** - Add Ruth, Esther, Solomon, Peter, John, Mary, etc.
+
+#### Medium Priority (Enhanced Features)
+- [ ] **6. Reading Plans** - Guided study plans (21-day journey through Psalms with David)
+- [ ] **7. Bookmarks** - Save favorite verses and conversations
+- [ ] **8. Offline Indicator** - Show when using cached responses vs. live AI
+- [ ] **9. Font Size Settings** - Accessibility settings for text size
+- [ ] **10. Conversation Topics** - Pre-built discussion starters for each character
+
+#### Lower Priority (Advanced)
+- [ ] **11. Cloud Sync** - Sync conversations and reflections across devices
+- [ ] **12. Original Languages** - Show Hebrew/Greek with transliteration
+- [ ] **13. Cross-References** - Link related verses automatically
+- [ ] **14. Commentary Integration** - Add scholarly commentary access
+- [ ] **15. Group Study Mode** - Share conversations in group settings
+
+#### Technical Improvements
+- [x] **16. Fix TTS** ✅ - Re-implemented with Windows Speech API for Windows platform
+- [x] **17. Streaming Responses** ✅ - Already implemented with `IAsyncEnumerable<string>`
+- [x] **18. Better Error Recovery** ✅ - Added resilience helper with retry logic and user-friendly messages
+- [x] **19. Performance Improvements** ✅ - Lazy loading Bible data, indexed lookups, LRU cache
+
+### Recent Technical Updates
+
+1. **Windows TTS Service** - Platform-specific implementation using `Windows.Media.SpeechSynthesis` with proper voice selection and text cleaning
+2. **Resilience Helper** - Exponential backoff retry logic with user-friendly error messages
+3. **Bible Lookup Performance** - Lazy loading, O(1) book index lookup, LRU passage cache
+
+---
+
 Potential features for future development:
 - Web UI (Blazor)
 - Desktop UI (WPF/MAUI)
