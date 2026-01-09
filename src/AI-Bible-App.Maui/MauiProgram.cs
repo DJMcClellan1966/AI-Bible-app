@@ -43,12 +43,14 @@ public static class MauiProgram
 
 		// Core services
 		builder.Services.AddSingleton<INavigationService, NavigationService>();
+		builder.Services.AddSingleton<IDialogService, DialogService>();
 		builder.Services.AddSingleton<ICharacterRepository, InMemoryCharacterRepository>();
 		builder.Services.AddSingleton<IChatRepository, JsonChatRepository>();
 		builder.Services.AddSingleton<IPrayerRepository, JsonPrayerRepository>();
 		builder.Services.AddSingleton<IReflectionRepository, JsonReflectionRepository>();
 		builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
 		builder.Services.AddSingleton<IBibleLookupService, BibleLookupService>();
+		builder.Services.AddSingleton<ITrainingDataExporter, TrainingDataExporter>();
 		
 		// AI Services - Hybrid (local Ollama + cloud Groq fallback)
 		builder.Services.AddSingleton<LocalAIService>();
@@ -61,6 +63,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<ChatHistoryViewModel>();
 		builder.Services.AddTransient<PrayerViewModel>();
 		builder.Services.AddTransient<ReflectionViewModel>();
+		builder.Services.AddTransient<SettingsViewModel>();
 
 		// Register Pages
 		builder.Services.AddTransient<CharacterSelectionPage>();
@@ -68,6 +71,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<ChatHistoryPage>();
 		builder.Services.AddTransient<PrayerPage>();
 		builder.Services.AddTransient<ReflectionPage>();
+		builder.Services.AddTransient<SettingsPage>();
 
 		return builder.Build();
 	}

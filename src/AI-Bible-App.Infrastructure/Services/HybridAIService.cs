@@ -3,11 +3,13 @@ using AI_Bible_App.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace AI_Bible_App.Infrastructure.Services;
 
 /// <summary>
-/// Hybrid AI service that tries local Ollama first, falls back to Groq cloud
+/// Hybrid AI service that tries local Ollama first, falls back to Groq cloud.
+/// On mobile platforms (iOS/Android), defaults to cloud since Ollama can't run locally.
 /// </summary>
 public class HybridAIService : IAIService
 {
@@ -26,12 +28,26 @@ public class HybridAIService : IAIService
         _localService = localService;
         _cloudService = cloudService;
         _logger = logger;
-        _preferLocal = configuration["AI:PreferLocal"]?.ToLower() != "false";
         _cloudAvailable = _cloudService.IsAvailable;
         
+        // Detect mobile platform - on iOS/Android, prefer cloud since Ollama can't run locally
+        var isMobilePlatform = IsMobilePlatform();
+        var configPreferLocal = configuration["AI:PreferLocal"]?.ToLower() != "false";
+        
+        // On mobile, default to cloud unless explicitly set to prefer local (e.g., for custom server)
+        _preferLocal = isMobilePlatform ? false : configPreferLocal;
+        
         _logger.LogInformation(
-            "HybridAIService initialized. PreferLocal: {PreferLocal}, CloudAvailable: {CloudAvailable}",
-            _preferLocal, _cloudAvailable);
+            "HybridAIService initialized. Platform: {Platform}, PreferLocal: {PreferLocal}, CloudAvailable: {CloudAvailable}",
+            isMobilePlatform ? "Mobile" : "Desktop", _preferLocal, _cloudAvailable);
+    }
+    
+    private static bool IsMobilePlatform()
+    {
+        // Check OS platform to detect mobile
+        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+            return true;
+        return false;
     }
 
     public async Task<string> GetChatResponseAsync(

@@ -55,8 +55,29 @@
                                     <controls:BibleLinkLabel LinkedText="{Binding Content}"
                                            TextColor="{DynamicResource TextColor}"
                                            LineBreakMode="WordWrap"/>
-                                    <!-- Save to Reflections button -->
-                                    <HorizontalStackLayout Spacing="10" HorizontalOptions="End">
+                                    <!-- Rating and Save buttons -->
+                                    <HorizontalStackLayout Spacing="15" HorizontalOptions="End">
+                                        <!-- Thumbs Up -->
+                                        <Label Text="👍"
+                                               FontSize="14"
+                                               Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='1'}">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer 
+                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RateMessageCommand}"
+                                                    CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}"/>
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                        <!-- Thumbs Down -->
+                                        <Label Text="👎"
+                                               FontSize="14"
+                                               Opacity="{Binding Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='-1'}">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer 
+                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RateMessageCommand}"
+                                                    CommandParameter="{Binding ., Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='-1'}"/>
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                        <!-- Save -->
                                         <Label Text="📝 Save"
                                                FontSize="11"
                                                TextColor="{DynamicResource Primary}"
@@ -195,15 +216,29 @@
                        VerticalOptions="Center"/>
             </Border>
 
+            <!-- Send Button (visible when not typing) -->
             <Button Grid.Column="2"
                     Text="Send"
                     Command="{Binding SendMessageCommand}"
-                    IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
+                    IsVisible="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
                     Margin="10,0,0,0"
                     WidthRequest="80"
                     HeightRequest="50"
                     CornerRadius="25"
                     BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"/>
+            
+            <!-- Stop Button (visible when AI is typing) -->
+            <Button Grid.Column="2"
+                    Text="⏹"
+                    Command="{Binding CancelResponseCommand}"
+                    IsVisible="{Binding IsAiTyping}"
+                    Margin="10,0,0,0"
+                    WidthRequest="80"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    FontSize="20"
+                    BackgroundColor="#E74C3C"
                     TextColor="White"/>
         </Grid>
 

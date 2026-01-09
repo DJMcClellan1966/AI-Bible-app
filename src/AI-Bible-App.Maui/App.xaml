@@ -16,6 +16,7 @@
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
             <converters:RatingOpacityConverter x:Key="RatingOpacityConverter"/>
+            <converters:MessageToRatingTupleConverter x:Key="MessageToRatingTupleConverter"/>
             <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
             <converters:UtcToLocalTimeConverter x:Key="UtcToLocalTimeConverter"/>
             <converters:ReflectionTypeToEmojiConverter x:Key="ReflectionTypeToEmojiConverter"/>

@@ -18,9 +18,14 @@ public partial class ChatViewModel : BaseViewModel
     private readonly IChatRepository _chatRepository;
     private readonly IBibleLookupService _bibleLookupService;
     private readonly IReflectionRepository _reflectionRepository;
+    private readonly IDialogService _dialogService;
     private readonly bool _enableContextualReferences;
     private ChatSession? _currentSession;
     private CancellationTokenSource? _speechCancellationTokenSource;
+    private CancellationTokenSource? _aiResponseCancellationTokenSource;
+
+    // Event to request scroll to bottom
+    public event EventHandler? ScrollToBottomRequested;
 
     [ObservableProperty]
     private BiblicalCharacter? character;
@@ -37,12 +42,13 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private bool isListening;
 
-    public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IConfiguration configuration)
+    public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IDialogService dialogService, IConfiguration configuration)
     {
         _aiService = aiService;
         _chatRepository = chatRepository;
         _bibleLookupService = bibleLookupService;
         _reflectionRepository = reflectionRepository;
+        _dialogService = dialogService;
         _enableContextualReferences = configuration["Features:ContextualReferences"]?.ToLower() == "true";
     }
 
@@ -107,13 +113,9 @@ public partial class ChatViewModel : BaseViewModel
                 status = await Permissions.RequestAsync<Permissions.Microphone>();
                 if (status != PermissionStatus.Granted)
                 {
-                    if (Shell.Current?.CurrentPage != null)
-                    {
-                        await Shell.Current.CurrentPage.DisplayAlert(
-                            "Permission Required",
-                            "Microphone permission is needed for speech-to-text.",
-                            "OK");
-                    }
+                    await _dialogService.ShowAlertAsync(
+                        "Permission Required",
+                        "Microphone permission is needed for speech-to-text.");
                     return;
                 }
             }
@@ -148,13 +150,9 @@ public partial class ChatViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Speech recognition error: {ex.Message}");
-            if (Shell.Current?.CurrentPage != null)
-            {
-                await Shell.Current.CurrentPage.DisplayAlert(
-                    "Speech Error",
-                    $"Could not recognize speech: {ex.Message}",
-                    "OK");
-            }
+            await _dialogService.ShowAlertAsync(
+                "Speech Error",
+                $"Could not recognize speech: {ex.Message}");
         }
         finally
         {
@@ -179,6 +177,9 @@ public partial class ChatViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("[DEBUG] Setting IsAiTyping = true");
             IsAiTyping = true;
+            _aiResponseCancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = _aiResponseCancellationTokenSource.Token;
+            
             var userMsg = UserMessage;
             UserMessage = string.Empty;
 
@@ -191,6 +192,9 @@ public partial class ChatViewModel : BaseViewModel
             Messages.Add(chatMessage);
             _currentSession?.Messages.Add(chatMessage);
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Added user message: {userMsg}");
+            
+            // Request scroll to bottom after user message
+            ScrollToBottomRequested?.Invoke(this, EventArgs.Empty);
 
             // Create AI message placeholder for streaming
             var aiMessage = new ChatMessage
@@ -207,17 +211,22 @@ public partial class ChatViewModel : BaseViewModel
             // Stream the response on background thread, update UI on main thread
             await Task.Run(async () =>
             {
-                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg))
+                await foreach (var token in _aiService.StreamChatResponseAsync(Character, conversationHistory, userMsg, cancellationToken))
                 {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    
                     // Update UI on main thread
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
                         aiMessage.Content += token;
                     });
                 }
-            });
+            }, cancellationToken);
             
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Streaming complete. Response length: {aiMessage.Content?.Length ?? 0}");
+            
+            // Request scroll to bottom after AI response
+            ScrollToBottomRequested?.Invoke(this, EventArgs.Empty);
             
             _currentSession?.Messages.Add(aiMessage);
 
@@ -277,33 +286,62 @@ public partial class ChatViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("[DEBUG] Setting IsAiTyping = false");
             IsAiTyping = false;
+            _aiResponseCancellationTokenSource?.Dispose();
+            _aiResponseCancellationTokenSource = null;
         }
     }
 
     [RelayCommand]
-    private async Task RateMessage(ChatMessage message)
+    private void CancelResponse()
     {
-        if (message == null || message.Role != "assistant") return;
-        
-        // Toggle rating: if already thumbs up, remove rating; otherwise set thumbs up
-        message.Rating = message.Rating == 1 ? 0 : 1;
-        System.Diagnostics.Debug.WriteLine($"[DEBUG] Rated message {message.Id} as {message.Rating}");
-        
-        // Save the updated session with rating
-        if (_currentSession != null)
+        if (_aiResponseCancellationTokenSource != null && !_aiResponseCancellationTokenSource.IsCancellationRequested)
         {
-            await _chatRepository.SaveSessionAsync(_currentSession);
+            System.Diagnostics.Debug.WriteLine("[DEBUG] Cancelling AI response...");
+            _aiResponseCancellationTokenSource.Cancel();
         }
     }
 
     [RelayCommand]
-    private async Task RateMessageNegative(ChatMessage message)
+    private async Task RateMessage((ChatMessage message, int targetRating) args)
     {
+        var (message, targetRating) = args;
         if (message == null || message.Role != "assistant") return;
         
-        // Toggle rating: if already thumbs down, remove rating; otherwise set thumbs down
-        message.Rating = message.Rating == -1 ? 0 : -1;
+        // Toggle rating: if already at target rating, remove it; otherwise set it
+        var newRating = message.Rating == targetRating ? 0 : targetRating;
+        message.Rating = newRating;
         System.Diagnostics.Debug.WriteLine($"[DEBUG] Rated message {message.Id} as {message.Rating}");
+        
+        // If rated (not removing rating), optionally ask for feedback
+        if (newRating != 0)
+        {
+            var provideFeedback = await _dialogService.ShowConfirmAsync(
+                "Feedback",
+                "Would you like to explain why?",
+                "Yes", "No");
+            
+            if (provideFeedback)
+            {
+                var prompt = newRating == 1 
+                    ? "What made this response helpful?" 
+                    : "How could this response be improved?";
+                    
+                var feedback = await _dialogService.ShowPromptAsync(
+                    "Your Feedback",
+                    prompt,
+                    maxLength: 500);
+                
+                if (!string.IsNullOrWhiteSpace(feedback))
+                {
+                    message.Feedback = feedback;
+                }
+            }
+        }
+        else
+        {
+            // Clearing rating also clears feedback
+            message.Feedback = null;
+        }
         
         // Save the updated session with rating
         if (_currentSession != null)
@@ -329,38 +367,34 @@ public partial class ChatViewModel : BaseViewModel
 
         try
         {
-            if (Shell.Current?.CurrentPage != null)
+            var title = await _dialogService.ShowPromptAsync(
+                "Save to Reflections",
+                "Give this reflection a title:",
+                initialValue: $"Chat with {Character?.Name ?? "Character"}",
+                maxLength: 100);
+
+            if (title == null) return; // Cancelled
+
+            // Get Bible references from contextual references if any
+            var bibleRefs = message.ContextualReferences?
+                .Select(r => r.Reference)
+                .ToList() ?? new List<string>();
+
+            var reflection = new Reflection
             {
-                var title = await Shell.Current.CurrentPage.DisplayPromptAsync(
-                    "Save to Reflections",
-                    "Give this reflection a title:",
-                    initialValue: $"Chat with {Character?.Name ?? "Character"}",
-                    maxLength: 100);
+                Title = title,
+                SavedContent = message.Content,
+                Type = ReflectionType.Chat,
+                CharacterName = Character?.Name,
+                BibleReferences = bibleRefs,
+                CreatedAt = DateTime.UtcNow
+            };
 
-                if (title == null) return; // Cancelled
+            await _reflectionRepository.SaveReflectionAsync(reflection);
 
-                // Get Bible references from contextual references if any
-                var bibleRefs = message.ContextualReferences?
-                    .Select(r => r.Reference)
-                    .ToList() ?? new List<string>();
-
-                var reflection = new Reflection
-                {
-                    Title = title,
-                    SavedContent = message.Content,
-                    Type = ReflectionType.Chat,
-                    CharacterName = Character?.Name,
-                    BibleReferences = bibleRefs,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _reflectionRepository.SaveReflectionAsync(reflection);
-
-                await Shell.Current.CurrentPage.DisplayAlert(
-                    "Saved! ✓",
-                    "This response has been saved to your reflections. You can add your personal thoughts there.",
-                    "OK");
-            }
+            await _dialogService.ShowAlertAsync(
+                "Saved! ✓",
+                "This response has been saved to your reflections. You can add your personal thoughts there.");
         }
         catch (Exception ex)
         {

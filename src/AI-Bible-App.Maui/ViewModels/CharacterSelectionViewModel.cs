@@ -14,6 +14,8 @@ public partial class CharacterSelectionViewModel : BaseViewModel
     private readonly ICharacterRepository _characterRepository;
     private readonly INavigationService _navigationService;
     private readonly IHealthCheckService? _healthCheckService;
+    private readonly IChatRepository _chatRepository;
+    private readonly IDialogService _dialogService;
 
     [ObservableProperty]
     private ObservableCollection<BiblicalCharacter> characters = new();
@@ -33,10 +35,14 @@ public partial class CharacterSelectionViewModel : BaseViewModel
     public CharacterSelectionViewModel(
         ICharacterRepository characterRepository,
         INavigationService navigationService,
+        IChatRepository chatRepository,
+        IDialogService dialogService,
         IHealthCheckService? healthCheckService = null)
     {
         _characterRepository = characterRepository;
         _navigationService = navigationService;
+        _chatRepository = chatRepository;
+        _dialogService = dialogService;
         _healthCheckService = healthCheckService;
         Title = "Choose a Biblical Character";
     }
@@ -114,11 +120,39 @@ public partial class CharacterSelectionViewModel : BaseViewModel
         try
         {
             SelectedCharacter = character;
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] About to navigate to chat page...");
-            await _navigationService.NavigateToAsync("chat", new Dictionary<string, object>
+            
+            // Check if there's an existing session for this character
+            var existingSession = await _chatRepository.GetLatestSessionForCharacterAsync(character.Id);
+            var navParams = new Dictionary<string, object> { { "character", character } };
+            
+            if (existingSession != null && existingSession.Messages.Count > 0)
             {
-                { "character", character }
-            });
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Found existing session with {existingSession.Messages.Count} messages");
+                
+                // Ask user if they want to continue or start new
+                var result = await _dialogService.ShowActionSheetAsync(
+                    $"Continue conversation with {character.Name}?",
+                    "Cancel",
+                    null,
+                    "Continue Chat",
+                    "Start New Chat");
+                
+                if (result == "Cancel" || result == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] User cancelled selection");
+                    return;
+                }
+                
+                if (result == "Start New Chat")
+                {
+                    System.Diagnostics.Debug.WriteLine("[DEBUG] User chose new chat");
+                    navParams.Add("newChat", true);
+                }
+                // "Continue Chat" will use the existing session automatically
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] About to navigate to chat page...");
+            await _navigationService.NavigateToAsync("chat", navParams);
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Navigation completed successfully");
         }
         catch (Exception ex)

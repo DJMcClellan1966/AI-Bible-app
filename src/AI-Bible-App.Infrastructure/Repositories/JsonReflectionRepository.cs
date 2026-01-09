@@ -5,7 +5,8 @@ using System.Text.Json;
 namespace AI_Bible_App.Infrastructure.Repositories;
 
 /// <summary>
-/// JSON file-based implementation of reflection repository
+/// JSON file-based implementation of reflection repository with caching.
+/// Uses local app data folder for user-specific storage.
 /// </summary>
 public class JsonReflectionRepository : IReflectionRepository
 {
@@ -31,19 +32,19 @@ public class JsonReflectionRepository : IReflectionRepository
 
     public async Task<List<Reflection>> GetAllReflectionsAsync()
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         return _cachedReflections!.OrderByDescending(r => r.CreatedAt).ToList();
     }
 
     public async Task<Reflection?> GetReflectionByIdAsync(string id)
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         return _cachedReflections!.FirstOrDefault(r => r.Id == id);
     }
 
     public async Task<List<Reflection>> GetReflectionsByTypeAsync(ReflectionType type)
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         return _cachedReflections!
             .Where(r => r.Type == type)
             .OrderByDescending(r => r.CreatedAt)
@@ -52,7 +53,7 @@ public class JsonReflectionRepository : IReflectionRepository
 
     public async Task<List<Reflection>> GetFavoriteReflectionsAsync()
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         return _cachedReflections!
             .Where(r => r.IsFavorite)
             .OrderByDescending(r => r.CreatedAt)
@@ -61,7 +62,7 @@ public class JsonReflectionRepository : IReflectionRepository
 
     public async Task<List<Reflection>> SearchReflectionsAsync(string searchTerm)
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         var term = searchTerm.ToLowerInvariant();
         
         return _cachedReflections!
@@ -75,32 +76,30 @@ public class JsonReflectionRepository : IReflectionRepository
 
     public async Task SaveReflectionAsync(Reflection reflection)
     {
-        await LoadReflectionsAsync();
+        await EnsureCacheLoadedAsync();
         
-        var existing = _cachedReflections!.FirstOrDefault(r => r.Id == reflection.Id);
-        if (existing != null)
+        var existingIndex = _cachedReflections!.FindIndex(r => r.Id == reflection.Id);
+        if (existingIndex >= 0)
         {
-            _cachedReflections!.Remove(existing);
             reflection.UpdatedAt = DateTime.UtcNow;
+            _cachedReflections[existingIndex] = reflection;
+        }
+        else
+        {
+            _cachedReflections.Add(reflection);
         }
         
-        _cachedReflections!.Add(reflection);
-        await SaveToFileAsync();
+        await SaveCacheAsync();
     }
 
     public async Task DeleteReflectionAsync(string id)
     {
-        await LoadReflectionsAsync();
-        
-        var reflection = _cachedReflections!.FirstOrDefault(r => r.Id == id);
-        if (reflection != null)
-        {
-            _cachedReflections!.Remove(reflection);
-            await SaveToFileAsync();
-        }
+        await EnsureCacheLoadedAsync();
+        _cachedReflections!.RemoveAll(r => r.Id == id);
+        await SaveCacheAsync();
     }
 
-    private async Task LoadReflectionsAsync()
+    private async Task EnsureCacheLoadedAsync()
     {
         if (_cachedReflections != null) return;
 
@@ -122,7 +121,7 @@ public class JsonReflectionRepository : IReflectionRepository
         }
     }
 
-    private async Task SaveToFileAsync()
+    private async Task SaveCacheAsync()
     {
         var json = JsonSerializer.Serialize(_cachedReflections, _jsonOptions);
         await File.WriteAllTextAsync(_filePath, json);

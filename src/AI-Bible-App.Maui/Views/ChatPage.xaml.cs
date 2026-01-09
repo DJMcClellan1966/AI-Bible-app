@@ -13,7 +13,27 @@ public partial class ChatPage : ContentPage, IQueryAttributable
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = _viewModel;
+        
+        // Subscribe to scroll requests
+        _viewModel.ScrollToBottomRequested += OnScrollToBottomRequested;
+        
         System.Diagnostics.Debug.WriteLine("[DEBUG] ChatPage constructor END");
+    }
+
+    private async void OnScrollToBottomRequested(object? sender, EventArgs e)
+    {
+        // Delay slightly to ensure UI has updated
+        await Task.Delay(50);
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            await ChatScrollView.ScrollToAsync(0, ChatScrollView.ContentSize.Height, true);
+        });
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _viewModel.ScrollToBottomRequested -= OnScrollToBottomRequested;
     }
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -31,7 +51,18 @@ public partial class ChatPage : ContentPage, IQueryAttributable
                 existingSession = session;
             }
             
+            // Check if starting a new chat (ignore existing session)
+            bool startNewChat = query.ContainsKey("newChat") && query["newChat"] is true;
+            if (startNewChat)
+            {
+                System.Diagnostics.Debug.WriteLine("[DEBUG] Starting new chat (ignoring existing session)");
+                existingSession = null;
+            }
+            
             await _viewModel.InitializeAsync(character, existingSession);
+            
+            // Scroll to bottom after loading messages
+            OnScrollToBottomRequested(this, EventArgs.Empty);
         }
     }
 }

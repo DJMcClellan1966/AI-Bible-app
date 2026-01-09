@@ -34,5 +34,12 @@
             ContentTemplate="{DataTemplate views:ReflectionPage}"
             Route="reflections" />
     </FlyoutItem>
+    
+    <FlyoutItem Title="Settings" Icon="{OnPlatform Default='⚙️'}">
+        <ShellContent
+            Title="Settings"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="settings" />
+    </FlyoutItem>
 
 </Shell>

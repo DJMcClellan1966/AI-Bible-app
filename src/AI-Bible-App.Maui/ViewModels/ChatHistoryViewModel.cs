@@ -1,5 +1,6 @@
 using AI_Bible_App.Core.Interfaces;
 using AI_Bible_App.Core.Models;
+using AI_Bible_App.Maui.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -12,6 +13,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
 {
     private readonly IChatRepository _chatRepository;
     private readonly ICharacterRepository _characterRepository;
+    private readonly IDialogService _dialogService;
 
     [ObservableProperty]
     private ObservableCollection<ChatHistoryItem> chatSessions = new();
@@ -25,10 +27,11 @@ public partial class ChatHistoryViewModel : BaseViewModel
     [ObservableProperty]
     private ChatHistoryItem? selectedSession;
 
-    public ChatHistoryViewModel(IChatRepository chatRepository, ICharacterRepository characterRepository)
+    public ChatHistoryViewModel(IChatRepository chatRepository, ICharacterRepository characterRepository, IDialogService dialogService)
     {
         _chatRepository = chatRepository;
         _characterRepository = characterRepository;
+        _dialogService = dialogService;
         Title = "Chat History";
     }
 
@@ -89,10 +92,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load chat sessions: {ex}");
-            if (Shell.Current?.CurrentPage != null)
-            {
-                await Shell.Current.CurrentPage.DisplayAlert("Error", $"Failed to load chat history: {ex.Message}", "OK");
-            }
+            await _dialogService.ShowAlertAsync("Error", $"Failed to load chat history: {ex.Message}");
         }
         finally
         {
@@ -110,10 +110,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
 
         if (character == null)
         {
-            if (Shell.Current?.CurrentPage != null)
-            {
-                await Shell.Current.CurrentPage.DisplayAlert("Error", "Character not found", "OK");
-            }
+            await _dialogService.ShowAlertAsync("Error", "Character not found");
             return;
         }
 
@@ -131,7 +128,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
     {
         if (item?.Session == null) return;
 
-        bool confirm = await Shell.Current.CurrentPage.DisplayAlert(
+        bool confirm = await _dialogService.ShowConfirmAsync(
             "Delete Chat",
             $"Delete conversation with {item.CharacterName}?",
             "Delete",
@@ -147,10 +144,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                if (Shell.Current?.CurrentPage != null)
-                {
-                    await Shell.Current.CurrentPage.DisplayAlert("Error", $"Failed to delete: {ex.Message}", "OK");
-                }
+                await _dialogService.ShowAlertAsync("Error", $"Failed to delete: {ex.Message}");
             }
         }
     }

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AI_Bible_App.Maui.ViewModels"
+             x:Class="AI_Bible_App.Maui.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+    
+    <ScrollView Padding="20">
+        <VerticalStackLayout Spacing="20">
+            
+            <!-- Header -->
+            <Label Text="⚙️ Settings"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+            
+            <!-- Training Data Section -->
+            <Border Padding="20"
+                    StrokeThickness="1"
+                    Stroke="{DynamicResource Gray300}"
+                    BackgroundColor="{DynamicResource CardBackground}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+                
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="📊 Training Data Statistics"
+                           FontSize="18"
+                           FontAttributes="Bold"/>
+                    
+                    <Label Text="Rate AI responses with 👍/👎 to help improve future models."
+                           FontSize="13"
+                           TextColor="{DynamicResource Gray600}"/>
+                    
+                    <!-- Stats Grid -->
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                        <Label Grid.Row="0" Text="Total Chat Sessions:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding TotalSessions}" FontAttributes="Bold"/>
+                        
+                        <Label Grid.Row="1" Text="Total Messages:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding TotalMessages}" FontAttributes="Bold"/>
+                        
+                        <Label Grid.Row="2" Text="Rated Messages:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding RatedMessages}" FontAttributes="Bold" TextColor="{DynamicResource Primary}"/>
+                        
+                        <Label Grid.Row="3" Text="👍 Positive Ratings:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding PositiveRatings}" FontAttributes="Bold" TextColor="Green"/>
+                        
+                        <Label Grid.Row="4" Text="👎 Negative Ratings:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding NegativeRatings}" FontAttributes="Bold" TextColor="Red"/>
+                        
+                        <Label Grid.Row="5" Text="With Feedback:" TextColor="{DynamicResource TextColor}"/>
+                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding MessagesWithFeedback}" FontAttributes="Bold"/>
+                    </Grid>
+                    
+                    <Button Text="🔄 Refresh Stats"
+                            Command="{Binding RefreshStatsCommand}"
+                            BackgroundColor="{DynamicResource Gray200}"
+                            TextColor="{DynamicResource TextColor}"
+                            CornerRadius="10"/>
+                </VerticalStackLayout>
+            </Border>
+            
+            <!-- Export Section -->
+            <Border Padding="20"
+                    StrokeThickness="1"
+                    Stroke="{DynamicResource Gray300}"
+                    BackgroundColor="{DynamicResource CardBackground}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+                
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="📤 Export Training Data"
+                           FontSize="18"
+                           FontAttributes="Bold"/>
+                    
+                    <Label Text="Export rated conversations in JSONL format for LLM fine-tuning."
+                           FontSize="13"
+                           TextColor="{DynamicResource Gray600}"/>
+                    
+                    <Button Text="Export All Rated Conversations"
+                            Command="{Binding ExportAllRatedCommand}"
+                            BackgroundColor="{DynamicResource Primary}"
+                            TextColor="White"
+                            CornerRadius="10"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+                    
+                    <Button Text="Export Positive Only (👍)"
+                            Command="{Binding ExportPositiveOnlyCommand}"
+                            BackgroundColor="Green"
+                            TextColor="White"
+                            CornerRadius="10"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+                    
+                    <Label Text="Tip: Export positive ratings for training good responses, or all ratings for DPO training."
+                           FontSize="11"
+                           FontAttributes="Italic"
+                           TextColor="{DynamicResource Gray500}"/>
+                </VerticalStackLayout>
+            </Border>
+            
+            <!-- About Section -->
+            <Border Padding="20"
+                    StrokeThickness="1"
+                    Stroke="{DynamicResource Gray300}"
+                    BackgroundColor="{DynamicResource CardBackground}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+                
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="ℹ️ About"
+                           FontSize="18"
+                           FontAttributes="Bold"/>
+                    
+                    <Label Text="AI Bible App"
+                           FontSize="16"
+                           FontAttributes="Bold"/>
+                    
+                    <Label Text="Chat with biblical figures, powered by local AI."
+                           FontSize="13"
+                           TextColor="{DynamicResource Gray600}"/>
+                    
+                    <Label Text="Version 1.0"
+                           FontSize="12"
+                           TextColor="{DynamicResource Gray500}"/>
+                </VerticalStackLayout>
+            </Border>
+            
+            <!-- Activity Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                              IsVisible="{Binding IsBusy}"
+                              Color="{DynamicResource Primary}"/>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

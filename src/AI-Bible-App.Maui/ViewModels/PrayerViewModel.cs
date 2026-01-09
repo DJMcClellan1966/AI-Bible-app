@@ -1,5 +1,6 @@
 using AI_Bible_App.Core.Interfaces;
 using AI_Bible_App.Core.Models;
+using AI_Bible_App.Maui.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -13,6 +14,7 @@ public partial class PrayerViewModel : BaseViewModel
     private readonly IAIService _aiService;
     private readonly IPrayerRepository _prayerRepository;
     private readonly IReflectionRepository _reflectionRepository;
+    private readonly IDialogService _dialogService;
 
     [ObservableProperty]
     private string prayerRequest = string.Empty;
@@ -29,11 +31,12 @@ public partial class PrayerViewModel : BaseViewModel
     [ObservableProperty]
     private bool isGenerating;
 
-    public PrayerViewModel(IAIService aiService, IPrayerRepository prayerRepository, IReflectionRepository reflectionRepository)
+    public PrayerViewModel(IAIService aiService, IPrayerRepository prayerRepository, IReflectionRepository reflectionRepository, IDialogService dialogService)
     {
         _aiService = aiService;
         _prayerRepository = prayerRepository;
         _reflectionRepository = reflectionRepository;
+        _dialogService = dialogService;
         Title = "Prayer Generator";
     }
 
@@ -65,11 +68,7 @@ public partial class PrayerViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Only show alert if we have a valid page context
-            if (Shell.Current?.CurrentPage != null)
-            {
-                await Shell.Current.CurrentPage.DisplayAlert("Error", $"Failed to load prayers: {ex.Message}", "OK");
-            }
+            await _dialogService.ShowAlertAsync("Error", $"Failed to load prayers: {ex.Message}");
         }
     }
 
@@ -90,8 +89,7 @@ public partial class PrayerViewModel : BaseViewModel
         catch (Exception ex)
         {
             GeneratedPrayer = string.Empty;
-            if (Shell.Current?.CurrentPage != null)
-                await Shell.Current.CurrentPage.DisplayAlert("Error", ex.Message, "OK");
+            await _dialogService.ShowAlertAsync("Error", ex.Message);
         }
         finally
         {
@@ -118,13 +116,7 @@ public partial class PrayerViewModel : BaseViewModel
             await _prayerRepository.SavePrayerAsync(prayer);
             SavedPrayers.Insert(0, prayer);
 
-            if (Shell.Current?.CurrentPage != null)
-            {
-                await Shell.Current.CurrentPage.DisplayAlert(
-                    "Success",
-                    "Prayer saved successfully!",
-                    "OK");
-            }
+            await _dialogService.ShowAlertAsync("Success", "Prayer saved successfully!");
 
             // Clear for new prayer
             PrayerRequest = string.Empty;
@@ -132,8 +124,7 @@ public partial class PrayerViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            if (Shell.Current?.CurrentPage != null)
-                await Shell.Current.CurrentPage.DisplayAlert("Error", ex.Message, "OK");
+            await _dialogService.ShowAlertAsync("Error", ex.Message);
         }
     }
 
@@ -143,18 +134,15 @@ public partial class PrayerViewModel : BaseViewModel
         if (prayer == null)
             return;
 
-        if (Shell.Current?.CurrentPage != null)
-        {
-            // Convert UTC to local time for display
-            var localTime = prayer.CreatedAt.Kind == DateTimeKind.Utc 
-                ? prayer.CreatedAt.ToLocalTime() 
-                : DateTime.SpecifyKind(prayer.CreatedAt, DateTimeKind.Utc).ToLocalTime();
-            
-            await Shell.Current.CurrentPage.DisplayAlert(
-                $"Prayer: {prayer.Topic}",
-                $"{prayer.Content}\n\n— Saved {localTime:MMMM d, yyyy h:mm tt}",
-                "Close");
-        }
+        // Convert UTC to local time for display
+        var localTime = prayer.CreatedAt.Kind == DateTimeKind.Utc 
+            ? prayer.CreatedAt.ToLocalTime() 
+            : DateTime.SpecifyKind(prayer.CreatedAt, DateTimeKind.Utc).ToLocalTime();
+        
+        await _dialogService.ShowAlertAsync(
+            $"Prayer: {prayer.Topic}",
+            $"{prayer.Content}\n\n— Saved {localTime:MMMM d, yyyy h:mm tt}",
+            "Close");
     }
 
     [RelayCommand]
@@ -171,31 +159,27 @@ public partial class PrayerViewModel : BaseViewModel
 
         try
         {
-            if (Shell.Current?.CurrentPage != null)
+            var title = await _dialogService.ShowPromptAsync(
+                "Save to Reflections",
+                "Give this reflection a title:",
+                initialValue: $"Prayer: {(string.IsNullOrEmpty(PrayerRequest) ? "Daily Prayer" : PrayerRequest)}",
+                maxLength: 100);
+
+            if (title == null) return; // Cancelled
+
+            var reflection = new Reflection
             {
-                var title = await Shell.Current.CurrentPage.DisplayPromptAsync(
-                    "Save to Reflections",
-                    "Give this reflection a title:",
-                    initialValue: $"Prayer: {(string.IsNullOrEmpty(PrayerRequest) ? "Daily Prayer" : PrayerRequest)}",
-                    maxLength: 100);
+                Title = title,
+                SavedContent = GeneratedPrayer,
+                Type = ReflectionType.Prayer,
+                CreatedAt = DateTime.UtcNow
+            };
 
-                if (title == null) return; // Cancelled
+            await _reflectionRepository.SaveReflectionAsync(reflection);
 
-                var reflection = new Reflection
-                {
-                    Title = title,
-                    SavedContent = GeneratedPrayer,
-                    Type = ReflectionType.Prayer,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _reflectionRepository.SaveReflectionAsync(reflection);
-
-                await Shell.Current.CurrentPage.DisplayAlert(
-                    "Saved! ✓",
-                    "This prayer has been saved to your reflections. You can add your personal thoughts there.",
-                    "OK");
-            }
+            await _dialogService.ShowAlertAsync(
+                "Saved! ✓",
+                "This prayer has been saved to your reflections. You can add your personal thoughts there.");
         }
         catch (Exception ex)
         {
