@@ -271,25 +271,56 @@ Only include references that are actually about this character. If the character
 
         _cachedVerses = new List<BibleVerse>();
 
-        if (!Directory.Exists(_bibleDataPath))
-            return;
+        // Try loading as MAUI bundled assets first (correct for packaged apps)
+        var bibleFiles = new[] { "web.json", "kjv.json", "asv.json" };
+        bool loadedFromBundle = false;
 
-        foreach (var file in Directory.GetFiles(_bibleDataPath, "*.json"))
+        foreach (var fileName in bibleFiles)
         {
             try
             {
-                var json = await File.ReadAllTextAsync(file);
+                // MAUI way: Use FileSystem.OpenAppPackageFileAsync for bundled assets
+                using var stream = await FileSystem.OpenAppPackageFileAsync($"Data/Bible/{fileName}");
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
                 var verses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
                 if (verses != null)
                 {
                     _cachedVerses.AddRange(verses);
+                    loadedFromBundle = true;
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {verses.Count} verses from bundled {fileName}");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading {file}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Could not load bundled {fileName}: {ex.Message}");
             }
         }
+
+        // Fallback: Try file system path (for development/debugging)
+        if (!loadedFromBundle && Directory.Exists(_bibleDataPath))
+        {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Trying file system fallback at: {_bibleDataPath}");
+            foreach (var file in Directory.GetFiles(_bibleDataPath, "*.json"))
+            {
+                try
+                {
+                    var json = await File.ReadAllTextAsync(file);
+                    var verses = System.Text.Json.JsonSerializer.Deserialize<List<BibleVerse>>(json);
+                    if (verses != null)
+                    {
+                        _cachedVerses.AddRange(verses);
+                        System.Diagnostics.Debug.WriteLine($"[DEBUG] Loaded {verses.Count} verses from {file}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Error loading {file}: {ex.Message}");
+                }
+            }
+        }
+
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] Total verses loaded: {_cachedVerses.Count}");
     }
 
     private static string NormalizeBookName(string book)

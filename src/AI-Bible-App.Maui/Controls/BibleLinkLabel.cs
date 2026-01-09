@@ -107,55 +107,28 @@ public class BibleLinkLabel : Label
             
             if (lookupService == null)
             {
+                System.Diagnostics.Debug.WriteLine("[DEBUG] BibleLinkLabel: lookupService is null, falling back to browser");
                 // Fallback to browser if service not available
                 await OpenInBrowserAsync(book, chapter, verseStart, verseEnd);
                 return;
             }
 
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] BibleLinkLabel: Looking up {book} {chapter}:{verseStart}");
             var result = await lookupService.LookupPassageAsync(book, chapter, verseStart, verseEnd);
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] BibleLinkLabel: Lookup result Found={result.Found}, Text length={result.Text?.Length ?? 0}");
 
             if (result.Found && Shell.Current?.CurrentPage != null)
             {
-                // Ask user if they want a contextual summary
-                var action = await Shell.Current.CurrentPage.DisplayActionSheet(
+                // Show verse directly in-app (user preference)
+                await Shell.Current.CurrentPage.DisplayAlert(
                     $"📖 {result.Reference} ({result.Translation})",
-                    "Close",
-                    null,
-                    "View Passage",
-                    "View with Context Summary",
-                    "Open in BibleGateway");
-
-                switch (action)
-                {
-                    case "View Passage":
-                        await Shell.Current.CurrentPage.DisplayAlert(
-                            $"📖 {result.Reference}",
-                            result.Text,
-                            "Close");
-                        break;
-
-                    case "View with Context Summary":
-                        // Show loading
-                        await Shell.Current.CurrentPage.DisplayAlert(
-                            $"📖 {result.Reference}",
-                            $"{result.Text}\n\n⏳ Generating context summary...",
-                            "Continue");
-                        
-                        var summary = await lookupService.GetContextualSummaryAsync(result.Reference, result.Text);
-                        await Shell.Current.CurrentPage.DisplayAlert(
-                            $"📖 {result.Reference}",
-                            $"{result.Text}\n\n📝 Context:\n{summary}",
-                            "Close");
-                        break;
-
-                    case "Open in BibleGateway":
-                        await OpenInBrowserAsync(book, chapter, verseStart, verseEnd);
-                        break;
-                }
+                    result.Text,
+                    "Close");
             }
             else
             {
                 // Passage not found locally - offer to open in browser
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] BibleLinkLabel: Passage not found locally for '{reference}'");
                 if (Shell.Current?.CurrentPage != null)
                 {
                     var openBrowser = await Shell.Current.CurrentPage.DisplayAlert(
@@ -173,7 +146,7 @@ public class BibleLinkLabel : Label
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error showing passage: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] BibleLinkLabel: Error showing passage: {ex.Message}");
             // Fallback to browser
             await OpenInBrowserAsync(book, chapter, verseStart, verseEnd);
         }

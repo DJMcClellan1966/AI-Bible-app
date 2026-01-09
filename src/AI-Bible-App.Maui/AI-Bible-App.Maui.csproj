@@ -86,6 +86,9 @@
 		<MauiAsset Include="Data\Bible\kjv.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</MauiAsset>
+		<MauiAsset Include="Data\Bible\asv.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</MauiAsset>
 	</ItemGroup>
 
 	<ItemGroup>

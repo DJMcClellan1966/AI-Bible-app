@@ -355,8 +355,15 @@ public partial class ChatViewModel : BaseViewModel
     [RelayCommand]
     private async Task ToggleVoice(ChatMessage? message)
     {
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] ToggleVoice called, message is null: {message == null}");
+        
         if (message == null || string.IsNullOrEmpty(message.Content) || message.Role != "assistant")
+        {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] ToggleVoice early return - message null: {message == null}, content empty: {string.IsNullOrEmpty(message?.Content)}, role: {message?.Role}");
             return;
+        }
+
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] ToggleVoice proceeding with message: {message.Content.Substring(0, Math.Min(50, message.Content.Length))}...");
 
         // If we're already speaking this message, stop it
         if (IsSpeaking && SpeakingMessageId == message.Id)
