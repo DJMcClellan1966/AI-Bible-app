@@ -16,6 +16,15 @@
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
             <converters:RatingOpacityConverter x:Key="RatingOpacityConverter"/>
+            <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
+            <converters:UtcToLocalTimeConverter x:Key="UtcToLocalTimeConverter"/>
+            <converters:ReflectionTypeToEmojiConverter x:Key="ReflectionTypeToEmojiConverter"/>
+            <converters:BoolToStarConverter x:Key="BoolToStarConverter"/>
+            <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+            <converters:IntToBoolConverter x:Key="IntToBoolConverter"/>
+            <converters:BoolToMicIconConverter x:Key="BoolToMicIconConverter"/>
+            <converters:BoolToMicColorConverter x:Key="BoolToMicColorConverter"/>
+            <converters:BoolToPlaceholderConverter x:Key="BoolToPlaceholderConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

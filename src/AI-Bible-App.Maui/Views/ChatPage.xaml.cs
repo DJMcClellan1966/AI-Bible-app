@@ -22,7 +22,16 @@ public partial class ChatPage : ContentPage, IQueryAttributable
         if (query.ContainsKey("character") && query["character"] is BiblicalCharacter character)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Initializing with character: {character.Name}");
-            await _viewModel.InitializeAsync(character);
+            
+            // Check if resuming an existing session
+            ChatSession? existingSession = null;
+            if (query.ContainsKey("session") && query["session"] is ChatSession session)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Resuming session: {session.Id}");
+                existingSession = session;
+            }
+            
+            await _viewModel.InitializeAsync(character, existingSession);
         }
     }
 }

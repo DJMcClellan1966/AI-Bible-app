@@ -4,12 +4,35 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:AI_Bible_App.Maui.Views"
-    Title="AI Bible App"
-    FlyoutBehavior="Disabled">
+    Title="Voices of Scripture"
+    FlyoutBehavior="Flyout">
 
-    <ShellContent
-        Title="Character Selection"
-        ContentTemplate="{DataTemplate views:CharacterSelectionPage}"
-        Route="characters" />
+    <FlyoutItem Title="Characters" Icon="{OnPlatform Default='👤'}">
+        <ShellContent
+            Title="Characters"
+            ContentTemplate="{DataTemplate views:CharacterSelectionPage}"
+            Route="characters" />
+    </FlyoutItem>
+    
+    <FlyoutItem Title="Chat History" Icon="{OnPlatform Default='📜'}">
+        <ShellContent
+            Title="Chat History"
+            ContentTemplate="{DataTemplate views:ChatHistoryPage}"
+            Route="history" />
+    </FlyoutItem>
+    
+    <FlyoutItem Title="Prayer Generator" Icon="{OnPlatform Default='🙏'}">
+        <ShellContent
+            Title="Prayer Generator"
+            ContentTemplate="{DataTemplate views:PrayerPage}"
+            Route="prayer" />
+    </FlyoutItem>
+    
+    <FlyoutItem Title="My Reflections" Icon="{OnPlatform Default='📝'}">
+        <ShellContent
+            Title="My Reflections"
+            ContentTemplate="{DataTemplate views:ReflectionPage}"
+            Route="reflections" />
+    </FlyoutItem>
 
 </Shell>

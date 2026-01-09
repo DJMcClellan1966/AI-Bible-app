@@ -3,12 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AI_Bible_App.Maui.ViewModels"
              xmlns:models="clr-namespace:AI_Bible_App.Core.Models;assembly=AI-Bible-App.Core"
+             xmlns:controls="clr-namespace:AI_Bible_App.Maui.Controls"
              x:Class="AI_Bible_App.Maui.Views.ChatPage"
              x:DataType="vm:ChatViewModel"
+             x:Name="ThisPage"
              Title="{Binding Title}"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
     
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="*,Auto,Auto">
         
         <!-- Chat Messages -->
         <ScrollView Grid.Row="0" x:Name="ChatScrollView">
@@ -17,8 +19,14 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ChatMessage">
                         <Grid Margin="0,5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
                             <!-- User Message (Right Aligned) -->
-                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='user'}"
+                            <Border Grid.Row="0"
+                                    IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='user'}"
                                     HorizontalOptions="End"
                                     MaximumWidthRequest="300"
                                     Padding="15"
@@ -32,7 +40,8 @@
                             </Border>
                             
                             <!-- Assistant Message (Left Aligned) -->
-                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='assistant'}"
+                            <Border Grid.Row="0"
+                                    IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='assistant'}"
                                     HorizontalOptions="Start"
                                     MaximumWidthRequest="300"
                                     Padding="15"
@@ -42,13 +51,75 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="20"/>
                                 </Border.StrokeShape>
-                                <Label Text="{Binding Content}"
-                                       TextColor="{DynamicResource TextColor}"
-                                       LineBreakMode="WordWrap"/>
+                                <VerticalStackLayout Spacing="8">
+                                    <controls:BibleLinkLabel LinkedText="{Binding Content}"
+                                           TextColor="{DynamicResource TextColor}"
+                                           LineBreakMode="WordWrap"/>
+                                    <!-- Save to Reflections button -->
+                                    <HorizontalStackLayout Spacing="10" HorizontalOptions="End">
+                                        <Label Text="📝 Save"
+                                               FontSize="11"
+                                               TextColor="{DynamicResource Primary}"
+                                               TextDecorations="Underline">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer 
+                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SaveToReflectionsCommand}"
+                                                    CommandParameter="{Binding .}"/>
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <!-- Contextual References (shown below assistant messages) -->
+                            <Border Grid.Row="1"
+                                    IsVisible="{Binding HasContextualReferences}"
+                                    HorizontalOptions="Start"
+                                    MaximumWidthRequest="320"
+                                    Margin="0,5,0,0"
+                                    Padding="12"
+                                    StrokeThickness="1"
+                                    Stroke="{DynamicResource Primary}"
+                                    BackgroundColor="{DynamicResource CardBackground}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="8">
+                                    <HorizontalStackLayout Spacing="5">
+                                        <Label Text="📖" FontSize="14"/>
+                                        <Label Text="Related Scripture from my experience:"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource Primary}"/>
+                                    </HorizontalStackLayout>
+                                    
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding ContextualReferences}" Spacing="10">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="models:ContextualReference">
+                                                <VerticalStackLayout Spacing="3">
+                                                    <controls:BibleLinkLabel LinkedText="{Binding Reference}"
+                                                                             FontSize="13"
+                                                                             FontAttributes="Bold"
+                                                                             TextColor="{DynamicResource Primary}"/>
+                                                    <Label Text="{Binding Summary}"
+                                                           FontSize="12"
+                                                           TextColor="{DynamicResource TextColor}"
+                                                           LineBreakMode="WordWrap"/>
+                                                    <Label Text="{Binding Connection, StringFormat='💬 \&quot;{0}\&quot;'}"
+                                                           FontSize="11"
+                                                           FontAttributes="Italic"
+                                                           TextColor="{DynamicResource Gray600}"
+                                                           LineBreakMode="WordWrap"/>
+                                                </VerticalStackLayout>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
                             </Border>
 
                             <!-- System Message (Centered, Error) -->
-                            <Border IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='system'}"
+                            <Border Grid.Row="0"
+                                    IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='system'}"
                                     HorizontalOptions="Center"
                                     Padding="10"
                                     BackgroundColor="{DynamicResource Warning}">
@@ -66,13 +137,50 @@
             </CollectionView>
         </ScrollView>
 
+        <!-- Typing Indicator (Row 1 - between messages and input) -->
+        <Border Grid.Row="1"
+                IsVisible="{Binding IsAiTyping}"
+                HorizontalOptions="Start"
+                Margin="15,8"
+                Padding="12,8"
+                BackgroundColor="{DynamicResource CardBackground}"
+                StrokeThickness="1"
+                Stroke="{DynamicResource Gray300}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="15"/>
+            </Border.StrokeShape>
+            <HorizontalStackLayout Spacing="8">
+                <ActivityIndicator IsRunning="True"
+                                 WidthRequest="16"
+                                 HeightRequest="16"
+                                 Color="{DynamicResource Primary}"/>
+                <Label Text="{Binding Character.Name, StringFormat='{0} is typing...'}"
+                       FontSize="13"
+                       FontAttributes="Italic"
+                       TextColor="{DynamicResource Gray600}"/>
+            </HorizontalStackLayout>
+        </Border>
+
         <!-- Input Area -->
-        <Grid Grid.Row="1" 
-              ColumnDefinitions="*,Auto"
+        <Grid Grid.Row="2" 
+              ColumnDefinitions="Auto,*,Auto"
               Padding="15,10"
               BackgroundColor="{DynamicResource CardBackground}">
             
-            <Border Grid.Column="0"
+            <!-- Microphone Button -->
+            <Button Grid.Column="0"
+                    Text="{Binding IsListening, Converter={StaticResource BoolToMicIconConverter}}"
+                    Command="{Binding ToggleSpeechToTextCommand}"
+                    IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
+                    WidthRequest="50"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    FontSize="20"
+                    Margin="0,0,10,0"
+                    BackgroundColor="{Binding IsListening, Converter={StaticResource BoolToMicColorConverter}}"
+                    TextColor="White"/>
+            
+            <Border Grid.Column="1"
                     Padding="10"
                     StrokeThickness="1"
                     Stroke="{DynamicResource Gray300}"
@@ -81,13 +189,13 @@
                     <RoundRectangle CornerRadius="25"/>
                 </Border.StrokeShape>
                 <Entry Text="{Binding UserMessage}"
-                       Placeholder="Type your message..."
+                       Placeholder="{Binding IsListening, Converter={StaticResource BoolToPlaceholderConverter}}"
                        ReturnCommand="{Binding SendMessageCommand}"
                        IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
                        VerticalOptions="Center"/>
             </Border>
 
-            <Button Grid.Column="1"
+            <Button Grid.Column="2"
                     Text="Send"
                     Command="{Binding SendMessageCommand}"
                     IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
@@ -99,27 +207,5 @@
                     TextColor="White"/>
         </Grid>
 
-        <!-- Typing Indicator -->
-        <Border Grid.Row="0"
-                IsVisible="{Binding IsAiTyping}"
-                HorizontalOptions="Start"
-                VerticalOptions="End"
-                Margin="20"
-                Padding="15"
-                BackgroundColor="{DynamicResource CardBackground}"
-                Shadow="{Shadow Brush=Black, Offset='0,2', Radius=4, Opacity=0.3}">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="20"/>
-            </Border.StrokeShape>
-            <HorizontalStackLayout Spacing="5">
-                <Label Text="{Binding Character.Name, StringFormat='{0} is typing'}"
-                       FontSize="12"
-                       TextColor="{DynamicResource Gray600}"/>
-                <ActivityIndicator IsRunning="True"
-                                 WidthRequest="15"
-                                 HeightRequest="15"
-                                 Color="{DynamicResource Primary}"/>
-            </HorizontalStackLayout>
-        </Border>
     </Grid>
 </ContentPage>

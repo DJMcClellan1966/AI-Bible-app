@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AI_Bible_App.Maui.ViewModels"
              xmlns:models="clr-namespace:AI_Bible_App.Core.Models;assembly=AI-Bible-App.Core"
+             xmlns:controls="clr-namespace:AI_Bible_App.Maui.Controls"
              x:Class="AI_Bible_App.Maui.Views.PrayerPage"
              x:DataType="vm:PrayerViewModel"
              Title="{Binding Title}"
@@ -76,13 +77,13 @@
                            FontSize="18"
                            FontAttributes="Bold"
                            TextColor="{DynamicResource Primary}"/>
-                    <Label Text="{Binding GeneratedPrayer}"
+                    <controls:BibleLinkLabel LinkedText="{Binding GeneratedPrayer}"
                            FontSize="14"
                            LineBreakMode="WordWrap"
                            TextColor="{DynamicResource TextColor}"/>
                     
                     <!-- Action Buttons -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10" Margin="0,10,0,0">
                         <Button Grid.Column="0"
                                 Text="Save"
                                 Command="{Binding SavePrayerCommand}"
@@ -90,7 +91,13 @@
                                 TextColor="White"
                                 CornerRadius="8"/>
                         <Button Grid.Column="1"
-                                Text="New Prayer"
+                                Text="📝 Reflect"
+                                Command="{Binding SaveToReflectionsCommand}"
+                                BackgroundColor="{DynamicResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"/>
+                        <Button Grid.Column="2"
+                                Text="New"
                                 Command="{Binding NewPrayerCommand}"
                                 BackgroundColor="{DynamicResource Secondary}"
                                 TextColor="White"
@@ -106,7 +113,8 @@
                        FontAttributes="Bold"/>
                 
                 <CollectionView ItemsSource="{Binding SavedPrayers}"
-                               SelectionMode="None">
+                               SelectionMode="Single"
+                               SelectedItem="{Binding SelectedPrayer}">
                     <CollectionView.EmptyView>
                         <Label Text="No saved prayers yet"
                                FontSize="14"
@@ -124,18 +132,13 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="8"/>
                                 </Border.StrokeShape>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer 
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PrayerViewModel}}, Path=ViewPrayerCommand}"
-                                        CommandParameter="{Binding .}"/>
-                                </Border.GestureRecognizers>
                                 <VerticalStackLayout Spacing="5">
                                     <Label Text="{Binding Topic}"
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            LineBreakMode="TailTruncation"
                                            MaxLines="2"/>
-                                    <Label Text="{Binding CreatedAt, StringFormat='{0:MMMM d, yyyy h:mm tt}'}"
+                                    <Label Text="{Binding CreatedAt, Converter={StaticResource UtcToLocalTimeConverter}, StringFormat='{0:MMMM d, yyyy h:mm tt}'}"
                                            FontSize="12"
                                            TextColor="{DynamicResource Gray600}"/>
                                 </VerticalStackLayout>

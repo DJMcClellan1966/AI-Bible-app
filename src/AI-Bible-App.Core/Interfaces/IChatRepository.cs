@@ -9,6 +9,7 @@ public interface IChatRepository
 {
     Task<ChatSession> GetSessionAsync(string sessionId);
     Task<List<ChatSession>> GetAllSessionsAsync();
+    Task<ChatSession?> GetLatestSessionForCharacterAsync(string characterId);
     Task SaveSessionAsync(ChatSession session);
     Task DeleteSessionAsync(string sessionId);
 }

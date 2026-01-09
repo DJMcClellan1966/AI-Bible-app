@@ -100,6 +100,15 @@ public class JsonChatRepository : IChatRepository
         }
     }
 
+    public async Task<ChatSession?> GetLatestSessionForCharacterAsync(string characterId)
+    {
+        var sessions = await GetAllSessionsAsync();
+        return sessions
+            .Where(s => s.CharacterId == characterId)
+            .OrderByDescending(s => s.StartedAt)
+            .FirstOrDefault();
+    }
+
     public async Task DeleteSessionAsync(string sessionId)
     {
         try

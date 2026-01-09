@@ -13,6 +13,7 @@ public partial class CharacterSelectionViewModel : BaseViewModel
 {
     private readonly ICharacterRepository _characterRepository;
     private readonly INavigationService _navigationService;
+    private readonly IHealthCheckService? _healthCheckService;
 
     [ObservableProperty]
     private ObservableCollection<BiblicalCharacter> characters = new();
@@ -20,18 +21,30 @@ public partial class CharacterSelectionViewModel : BaseViewModel
     [ObservableProperty]
     private BiblicalCharacter? selectedCharacter;
 
+    [ObservableProperty]
+    private bool isOllamaOnline;
+
+    [ObservableProperty]
+    private string ollamaStatusText = "Checking AI status...";
+
+    [ObservableProperty]
+    private Color ollamaStatusColor = Colors.Gray;
+
     public CharacterSelectionViewModel(
         ICharacterRepository characterRepository,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IHealthCheckService? healthCheckService = null)
     {
         _characterRepository = characterRepository;
         _navigationService = navigationService;
+        _healthCheckService = healthCheckService;
         Title = "Choose a Biblical Character";
     }
 
     public async Task InitializeAsync()
     {
         await LoadCharactersAsync();
+        await CheckOllamaStatusAsync();
     }
 
     private async Task LoadCharactersAsync()
@@ -45,6 +58,45 @@ public partial class CharacterSelectionViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckOllamaStatusAsync()
+    {
+        if (_healthCheckService == null)
+        {
+            IsOllamaOnline = false;
+            OllamaStatusText = "⚠️ Health check unavailable";
+            OllamaStatusColor = Colors.Orange;
+            return;
+        }
+
+        try
+        {
+            OllamaStatusText = "🔄 Checking AI...";
+            OllamaStatusColor = Colors.Gray;
+            
+            var isAvailable = await _healthCheckService.IsOllamaAvailableAsync();
+            IsOllamaOnline = isAvailable;
+            
+            if (isAvailable)
+            {
+                OllamaStatusText = "✅ AI Ready (Ollama Online)";
+                OllamaStatusColor = Colors.Green;
+            }
+            else
+            {
+                OllamaStatusText = "❌ AI Offline - Start Ollama";
+                OllamaStatusColor = Colors.Red;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ERROR] Ollama check failed: {ex.Message}");
+            IsOllamaOnline = false;
+            OllamaStatusText = "❌ AI Offline - Start Ollama";
+            OllamaStatusColor = Colors.Red;
         }
     }
 

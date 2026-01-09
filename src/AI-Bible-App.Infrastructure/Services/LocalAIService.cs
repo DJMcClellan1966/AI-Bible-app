@@ -18,6 +18,8 @@ public class LocalAIService : IAIService
     private OllamaApiClient? _client;
     private readonly string _modelName;
     private readonly string _ollamaUrl;
+    private readonly int _numCtx;
+    private readonly int _numPredict;
     private readonly ILogger<LocalAIService> _logger;
     private readonly IBibleRAGService? _ragService;
     private readonly bool _useRAG;
@@ -35,17 +37,21 @@ public class LocalAIService : IAIService
         _ragService = ragService;
         
         _ollamaUrl = configuration["Ollama:Url"] ?? "http://localhost:11434";
-        _modelName = configuration["Ollama:ModelName"] ?? "phi4";
+        _modelName = configuration["Ollama:ModelName"] ?? "phi3:mini";
+        _numCtx = int.TryParse(configuration["Ollama:NumCtx"], out var ctx) ? ctx : 2048;
+        _numPredict = int.TryParse(configuration["Ollama:NumPredict"], out var pred) ? pred : 512;
         _useRAG = configuration["RAG:Enabled"] == "true" || configuration["RAG:Enabled"] == null;
         
         // DON'T create HttpClient/OllamaApiClient in constructor - causes WinUI3 crashes
         // Use lazy initialization instead
         
         _logger.LogInformation(
-            "LocalAIService configured for model: {ModelName} at {Url}, RAG: {RAGEnabled}", 
+            "LocalAIService configured for model: {ModelName} at {Url}, RAG: {RAGEnabled}, NumCtx: {NumCtx}, NumPredict: {NumPredict}", 
             _modelName, 
             _ollamaUrl, 
-            _useRAG && _ragService != null);
+            _useRAG && _ragService != null,
+            _numCtx,
+            _numPredict);
     }
 
     private OllamaApiClient GetClient()
@@ -109,8 +115,8 @@ public class LocalAIService : IAIService
                 }
             }
 
-            // Add conversation history (limit to last 10 messages to manage context size)
-            foreach (var msg in conversationHistory.TakeLast(10))
+            // Add conversation history (limit to last 6 messages for speed)
+            foreach (var msg in conversationHistory.TakeLast(6))
             {
                 messages.Add(new Message
                 {
@@ -129,7 +135,12 @@ public class LocalAIService : IAIService
             var request = new ChatRequest
             {
                 Model = _modelName,
-                Messages = messages
+                Messages = messages,
+                Options = new RequestOptions
+                {
+                    NumCtx = _numCtx,
+                    NumPredict = _numPredict
+                }
             };
 
             _logger.LogDebug("Sending chat request to Ollama with {MessageCount} messages", messages.Count);
@@ -188,8 +199,8 @@ public class LocalAIService : IAIService
             }
         }
 
-        // Add conversation history (limit to last 10 messages)
-        foreach (var msg in conversationHistory.TakeLast(10))
+        // Add conversation history (limit to last 6 messages for speed)
+        foreach (var msg in conversationHistory.TakeLast(6))
         {
             messages.Add(new Message
             {
@@ -208,7 +219,12 @@ public class LocalAIService : IAIService
         var request = new ChatRequest
         {
             Model = _modelName,
-            Messages = messages
+            Messages = messages,
+            Options = new RequestOptions
+            {
+                NumCtx = _numCtx,
+                NumPredict = _numPredict
+            }
         };
 
         _logger.LogDebug("Streaming chat response with {MessageCount} messages", messages.Count);

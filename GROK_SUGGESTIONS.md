@@ -1,7 +1,7 @@
 # PocketFence & AI-Bible-App Development Journey
 *Privacy-first tools for families and faith*
 
-**Current Date:** January 07, 2026  
+**Current Date:** January 08, 2026  
 **Developer:** DJMcClellan1966
 
 This README documents the complete conversation and guidance received from Grok (xAI) throughout the evolution of two related projects:
@@ -15,22 +15,30 @@ The advice here has shaped the roadmap, architecture decisions, feature prioriti
 ## AI-Bible-App – Current State & Vision
 
 ### What It Is
-A C# console application (originally using Azure OpenAI) that lets users:
-- Chat with biblical figures (currently David and Paul)
+A .NET MAUI cross-platform application with local AI via Ollama that lets users:
+- Chat with 11 biblical figures with authentic personalities
 - Receive personalized prayer generation
 - Explore Scripture in an engaging, conversational way
+- Save reflections and journal entries
+- Use speech-to-text for voice input
 
 ### Best Features (as identified)
 - Authentic character voices via carefully crafted prompts
-- Personalized prayer generation with local JSON history
+- Personalized prayer generation with save functionality
 - Clean, layered C# architecture with unit tests
 - Strong educational and devotional potential
+- Fully offline with local Ollama AI (phi3:mini)
+- RAG-powered Scripture grounding
+- Modern MAUI UI with chat bubbles and typing indicators
+- Reflections/Journal page for saving insights
+- Speech-to-text input support
+- Chat history with export functionality
 
-### Biggest Limitations
-- Console-only UI (dated feel)
-- Dependency on Azure OpenAI (cost, internet required, privacy concerns)
-- Only 2 characters
-- Risk of hallucinations without grounding
+### Biggest Limitations (Resolved ✅)
+- ~~Console-only UI (dated feel)~~ → ✅ Modern MAUI UI
+- ~~Dependency on Azure OpenAI (cost, internet required, privacy concerns)~~ → ✅ Local Ollama
+- ~~Only 2 characters~~ → ✅ 11 characters
+- ~~Risk of hallucinations without grounding~~ → ✅ RAG with Bible verses
 
 ### Recommended Improvements (Prioritized)
 
@@ -49,17 +57,43 @@ A C# console application (originally using Azure OpenAI) that lets users:
    - ✅ Modern chat interface with message bubbles and typing indicators
    - ✅ Prayer generator with save functionality and history
    - ✅ Responsive design adapting to different screen sizes
+   - ✅ Reflections/Journal page with save, edit, delete, favorites
+   - ✅ Speech-to-text input using CommunityToolkit.Maui
+   - ✅ Contextual Bible references after AI responses
    - See [MAUI_IMPLEMENTATION.md](MAUI_IMPLEMENTATION.md) for details
 
-3. **Expand Biblical Characters**
-   Suggested next five (in order):
-   1. Moses – leadership, law, hearing God
-   2. Mary (Mother of Jesus) – surrender, motherhood, quiet faith
-   3. Peter – failure, restoration, boldness
-   4. Esther – courage, timing, providence
-   5. John (the Beloved) – love, intimacy with Jesus, revelation
+3. **Expand Biblical Characters** ✅ **COMPLETED (11 Characters)**
+   
+   **Original Characters (2):**
+   - ✅ David – shepherd, king, psalmist
+   - ✅ Paul – apostle, missionary, theologian
+   
+   **Phase 1 Additions (5):** ✅ **COMPLETED**
+   1. ✅ Moses – leadership, law, hearing God
+   2. ✅ Mary (Mother of Jesus) – surrender, motherhood, quiet faith
+   3. ✅ Peter – failure, restoration, boldness
+   4. ✅ Esther – courage, timing, providence
+   5. ✅ John (the Beloved) – love, intimacy with Jesus, revelation
 
-   → Total of 7 characters makes a strong 1.0 release
+   **Phase 2 Additions (4):** ✅ **COMPLETED**
+   1. ✅ Solomon – wisdom, proverbs, temple builder
+   2. ✅ Ruth – loyalty, redemption, ancestor of Christ
+   3. ✅ Deborah – female judge, prophetess, military leader
+   4. ✅ Hannah – prayer, motherhood, dedication
+   
+   *Note: Mary Magdalene removed due to limited biblical source material*
+
+   → Total of **11 characters** for a robust 1.0 release
+   
+   **Future Character Ideas:**
+   - Rahab – faith, transformation, unlikely hero
+   - Sarah – promise, patience, laughter
+   - Miriam – worship, leadership, sisterhood
+   - Priscilla – teaching, partnership, early church
+   - Lydia – business, hospitality, first European convert
+   - Abraham – faith, covenant, father of nations
+   - Joseph (OT) – dreams, forgiveness, providence
+   - Daniel – faithfulness, prayer, visions
 
 4. **Do NOT add saints or Protestant reformers yet**
    - Keep core offering strictly biblical to maintain trust and focus
@@ -71,13 +105,13 @@ A C# console application (originally using Azure OpenAI) that lets users:
    - Authentic character personalities
    - Not just reading the Bible — *talking with* its people
 
-6. **Chat History & Conversation Management** 🔲 **TODO**
-   - [ ] Chat History Page – List past conversations with date/character
-   - [ ] Resume Chat – Continue a previous conversation
-   - [ ] Delete Chat – Remove old conversations
-   - [ ] Export Conversations – Save chats externally (PDF/text)
-   - Backend: `JsonChatRepository` already saves sessions to `data/chat_sessions.json`
-   - Need: UI to browse, resume, and manage saved conversations
+6. **Chat History & Conversation Management** ✅ **COMPLETED**
+   - [x] Chat History Page – List past conversations with date/character
+   - [x] Resume Chat – Continue a previous conversation
+   - [x] Delete Chat – Remove old conversations (swipe right)
+   - [x] Export Conversations – Save chats externally (swipe left to share as text)
+   - Backend: `JsonChatRepository` saves sessions to `data/chat_sessions.json`
+   - UI: Swipe left to export, swipe right to delete
 
 7. **User Feedback & Rating System** ✅ **IN PROGRESS**
    - [x] Added `Rating` property to `ChatMessage` model (-1, 0, +1)
