@@ -63,18 +63,18 @@
                                     <RoundRectangle CornerRadius="12"/>
                                 </Border.StrokeShape>
                                 
-                                <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
+                                <Grid ColumnDefinitions="80,*" ColumnSpacing="15">
                                     <!-- Avatar Circle -->
                                     <Border Grid.Column="0"
-                                            WidthRequest="60"
-                                            HeightRequest="60"
+                                            WidthRequest="80"
+                                            HeightRequest="80"
                                             Padding="0"
                                             BackgroundColor="{DynamicResource Primary}">
                                         <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="30"/>
+                                            <RoundRectangle CornerRadius="40"/>
                                         </Border.StrokeShape>
                                         <Label Text="{Binding Name, StringFormat='{0:substring(0,1)}'}"
-                                               FontSize="28"
+                                               FontSize="36"
                                                FontAttributes="Bold"
                                                TextColor="White"
                                                HorizontalOptions="Center"

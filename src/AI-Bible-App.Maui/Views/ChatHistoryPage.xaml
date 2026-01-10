@@ -8,7 +8,7 @@
              Title="{Binding Title}"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
         
         <!-- Header -->
         <VerticalStackLayout Grid.Row="0" Padding="20,20,20,10">
@@ -23,8 +23,19 @@
                    Margin="0,5,0,0"/>
         </VerticalStackLayout>
 
+        <!-- Search Bar -->
+        <Border Grid.Row="1" 
+                Padding="15,0,15,10"
+                BackgroundColor="Transparent">
+            <SearchBar Placeholder="Search conversations..."
+                      Text="{Binding SearchText}"
+                      BackgroundColor="{DynamicResource InputBackground}"
+                      TextColor="{DynamicResource TextColor}"
+                      PlaceholderColor="{DynamicResource Gray600}"/>
+        </Border>
+
         <!-- Loading Indicator -->
-        <ActivityIndicator Grid.Row="1"
+        <ActivityIndicator Grid.Row="2"
                           IsRunning="{Binding IsLoading}"
                           IsVisible="{Binding IsLoading}"
                           VerticalOptions="Center"
@@ -34,7 +45,7 @@
                           Color="{DynamicResource Primary}"/>
 
         <!-- Empty State -->
-        <VerticalStackLayout Grid.Row="1"
+        <VerticalStackLayout Grid.Row="2"
                             IsVisible="{Binding IsEmpty}"
                             VerticalOptions="Center"
                             HorizontalOptions="Center"
@@ -62,7 +73,7 @@
         </VerticalStackLayout>
 
         <!-- Chat Sessions List -->
-        <CollectionView Grid.Row="1"
+        <CollectionView Grid.Row="2"
                        ItemsSource="{Binding ChatSessions}"
                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
                        SelectionMode="Single"
@@ -102,17 +113,17 @@
                                 <RoundRectangle CornerRadius="12"/>
                             </Border.StrokeShape>
                             
-                            <Grid ColumnDefinitions="50,*,Auto" ColumnSpacing="15">
+                            <Grid ColumnDefinitions="70,*,Auto" ColumnSpacing="15">
                                 <!-- Character Avatar -->
                                 <Border Grid.Column="0"
-                                        WidthRequest="50"
-                                        HeightRequest="50"
+                                        WidthRequest="70"
+                                        HeightRequest="70"
                                         BackgroundColor="{DynamicResource Primary}">
                                     <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="25"/>
+                                        <RoundRectangle CornerRadius="35"/>
                                     </Border.StrokeShape>
                                     <Label Text="{Binding CharacterName, Converter={StaticResource FirstLetterConverter}}"
-                                           FontSize="22"
+                                           FontSize="30"
                                            FontAttributes="Bold"
                                            TextColor="White"
                                            HorizontalOptions="Center"

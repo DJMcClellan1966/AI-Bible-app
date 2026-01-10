@@ -61,6 +61,12 @@ public partial class ChatViewModel : BaseViewModel
     [ObservableProperty]
     private ChatMessage? latestAssistantMessage;
 
+    [ObservableProperty]
+    private bool isSavingReflection;
+
+    [ObservableProperty]
+    private bool isActionInProgress;
+
     public ChatViewModel(IAIService aiService, IChatRepository chatRepository, IBibleLookupService bibleLookupService, IReflectionRepository reflectionRepository, IPrayerRepository prayerRepository, IDialogService dialogService, IContentModerationService moderationService, IUserService userService, ICharacterVoiceService voiceService, IConfiguration configuration)
     {
         _aiService = aiService;
@@ -560,13 +566,21 @@ public partial class ChatViewModel : BaseViewModel
 
         try
         {
+            IsSavingReflection = true;
+            IsActionInProgress = true;
+            
             var title = await _dialogService.ShowPromptAsync(
                 "Save to Reflections",
                 "Give this reflection a title:",
                 initialValue: $"Chat with {Character?.Name ?? "Character"}",
                 maxLength: 100);
 
-            if (title == null) return; // Cancelled
+            if (title == null)
+            {
+                IsSavingReflection = false;
+                IsActionInProgress = false;
+                return; // Cancelled
+            }
 
             // Get Bible references from contextual references if any
             var bibleRefs = message.ContextualReferences?
@@ -585,6 +599,9 @@ public partial class ChatViewModel : BaseViewModel
 
             await _reflectionRepository.SaveReflectionAsync(reflection);
 
+            IsSavingReflection = false;
+            IsActionInProgress = false;
+            
             var goToReflections = await _dialogService.ShowConfirmAsync(
                 "Saved! ✓",
                 "This response has been saved to your reflections. Would you like to add your thoughts now?",
@@ -598,6 +615,11 @@ public partial class ChatViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] Error saving reflection: {ex.Message}");
+        }
+        finally
+        {
+            IsSavingReflection = false;
+            IsActionInProgress = false;
         }
     }
 
@@ -624,6 +646,7 @@ public partial class ChatViewModel : BaseViewModel
         try
         {
             IsGeneratingPrayer = true;
+            IsActionInProgress = true;
 
             // Create a prayer prompt in the character's voice
             var prayerTopic = $@"Generate a heartfelt prayer in the voice and style of {Character.Name}, a {Character.Description}.
@@ -672,6 +695,7 @@ Draw from {Character.Name}'s biblical experiences and wisdom. Keep the prayer 2-
         finally
         {
             IsGeneratingPrayer = false;
+            IsActionInProgress = false;
         }
     }
 }

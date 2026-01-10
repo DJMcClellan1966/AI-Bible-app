@@ -42,4 +42,14 @@ public class UserSettings
     /// User's preferred Bible version (kjv, web, asv)
     /// </summary>
     public string PreferredBibleVersion { get; set; } = "kjv";
+    
+    /// <summary>
+    /// Theme preference: "System", "Light", or "Dark"
+    /// </summary>
+    public string ThemePreference { get; set; } = "System";
+    
+    /// <summary>
+    /// Font size multiplier: "Small" (0.85), "Medium" (1.0), "Large" (1.2), "ExtraLarge" (1.4)
+    /// </summary>
+    public string FontSizePreference { get; set; } = "Medium";
 }

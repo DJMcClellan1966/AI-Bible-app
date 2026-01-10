@@ -15,6 +15,11 @@ public class BiblicalCharacter
     public Dictionary<string, string> Attributes { get; set; } = new();
     
     /// <summary>
+    /// Filename of the character's icon (e.g., "david.png")
+    /// </summary>
+    public string IconFileName { get; set; } = "default_avatar.png";
+    
+    /// <summary>
     /// Voice configuration for text-to-speech reading of character responses
     /// </summary>
     public VoiceConfig Voice { get; set; } = new();

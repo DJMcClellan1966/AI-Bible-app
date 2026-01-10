@@ -244,3 +244,23 @@ public class BoolToSetChangeConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Converts generating prayer bool to status text.
+/// </summary>
+public class BoolToGeneratingPrayerTextConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isGenerating && isGenerating)
+        {
+            return "Generating prayer...";
+        }
+        return "Working...";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

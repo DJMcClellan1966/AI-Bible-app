@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using AI_Bible_App.Core.Interfaces;
+using AI_Bible_App.Core.Models;
 using AI_Bible_App.Infrastructure.Repositories;
 using AI_Bible_App.Infrastructure.Services;
 using AI_Bible_App.Maui.Services;
@@ -51,6 +52,13 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
 		builder.Services.AddSingleton<IBibleLookupService, BibleLookupService>();
 		builder.Services.AddSingleton<ITrainingDataExporter, TrainingDataExporter>();
+		
+		// New feature services
+		builder.Services.AddSingleton<IKeyboardShortcutService, KeyboardShortcutService>();
+		builder.Services.AddSingleton<IDevotionalRepository, DevotionalRepository>();
+		builder.Services.AddSingleton<IVerseBookmarkRepository, VerseBookmarkRepository>();
+		builder.Services.AddSingleton<IBibleVerseIndexService, BibleVerseIndexService>();
+		builder.Services.AddSingleton<ISecureConfigService, SecureConfigService>();
 		
 		// Text-to-speech for character voices
 		// Use platform-specific implementation on Windows for better compatibility

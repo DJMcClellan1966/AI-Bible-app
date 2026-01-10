@@ -68,9 +68,10 @@
                                     WidthRequest="50" HeightRequest="50"
                                     StrokeShape="RoundRectangle 25"
                                     StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B5E20}">
-                                <Label Text="{Binding AvatarEmoji}" 
-                                       FontSize="24"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}">
+                                <Image Source="default_avatar.png" 
+                                       WidthRequest="35"
+                                       HeightRequest="35"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Border>
@@ -122,6 +123,7 @@
                            Placeholder="Enter your name"
                            Text="{Binding NewUserName}"
                            ReturnCommand="{Binding CreateUserCommand}"
+                           MaxLength="50"
                            FontSize="16"/>
                     <Button Grid.Column="1"
                             Text="Create"

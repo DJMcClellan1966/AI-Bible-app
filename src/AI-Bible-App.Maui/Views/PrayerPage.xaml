@@ -42,6 +42,7 @@
                             Placeholder="What would you like to pray about?"
                             PlaceholderColor="{DynamicResource Gray400}"
                             TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                            MaxLength="1000"
                             HeightRequest="120"
                             AutoSize="TextChanges"/>
                 </VerticalStackLayout>

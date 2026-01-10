@@ -53,6 +53,7 @@ Speak naturally in first person, sharing wisdom from your biblical experiences. 
                     { "KnownFor", "Defeating Goliath, Writing Psalms, United Kingdom" },
                     { "KeyVirtues", "Courage, Repentance, Worship" }
                 },
+                IconFileName = "david.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 0.9f,  // Slightly deeper - kingly, mature voice
@@ -110,6 +111,7 @@ Speak as a teacher and spiritual father, combining theological insight with past
                     { "KnownFor", "Missionary Journeys, Epistles, Conversion on Damascus Road" },
                     { "KeyVirtues", "Faith, Perseverance, Grace" }
                 },
+                IconFileName = "paul.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 0.95f,  // Authoritative teacher's voice
@@ -160,6 +162,7 @@ Speak as one who has seen God's power and heard His voice. Balance the weight of
                     { "KnownFor", "Ten Commandments, Exodus from Egypt, Parting Red Sea" },
                     { "KeyVirtues", "Leadership, Obedience, Faithfulness" }
                 },
+                IconFileName = "moses.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 0.85f,  // Deep, authoritative - elder prophet
@@ -211,6 +214,7 @@ Speak with maternal warmth and spiritual depth. Share about trusting God even wh
                     { "KnownFor", "Mother of Jesus, Magnificat, Witness to Christ's Life" },
                     { "KeyVirtues", "Surrender, Trust, Purity" }
                 },
+                IconFileName = "mary.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.15f,  // Higher, gentle - feminine voice
@@ -263,6 +267,7 @@ Speak as one who has been both headstrong and humbled, who failed Jesus yet was 
                     { "KnownFor", "Walked on Water, Denied Jesus, Led Early Church" },
                     { "KeyVirtues", "Courage, Repentance, Leadership" }
                 },
+                IconFileName = "peter.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 0.95f,  // Slightly deeper - rugged fisherman
@@ -313,6 +318,7 @@ Speak as one who understands that God places people in positions for His purpose
                     { "KnownFor", "Saving the Jews, 'For Such a Time as This'" },
                     { "KeyVirtues", "Courage, Wisdom, Sacrifice" }
                 },
+                IconFileName = "esther.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.1f,   // Higher - royal feminine voice
@@ -365,6 +371,7 @@ Speak as one who knew Jesus most intimately, who emphasizes abiding in Christ an
                     { "KnownFor", "Gospel of John, Book of Revelation, Jesus's Beloved Friend" },
                     { "KeyVirtues", "Love, Intimacy with God, Faithfulness" }
                 },
+                IconFileName = "john.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.0f,   // Normal - gentle yet profound
@@ -416,6 +423,7 @@ Speak as one who has gained wisdom through both revelation and hard experience. 
                     { "KnownFor", "Wisdom, Temple Builder, Proverbs" },
                     { "KeyVirtues", "Wisdom, Discernment, Justice" }
                 },
+                IconFileName = "solomon.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 0.9f,   // Deeper - wise elder king
@@ -464,6 +472,7 @@ Speak as one who knows the cost and reward of radical commitment. Encourage fait
                     { "KnownFor", "Loyalty to Naomi, Kinsman-Redeemer Story, Ancestor of Jesus" },
                     { "KeyVirtues", "Faithfulness, Humility, Devotion" }
                 },
+                IconFileName = "ruth.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.1f,   // Higher - young woman's voice
@@ -513,6 +522,7 @@ Speak as a confident woman of God who exercised authority in a male-dominated wo
                     { "KnownFor", "Only Female Judge, Victory Song, 'Mother in Israel'" },
                     { "KeyVirtues", "Leadership, Courage, Faith" }
                 },
+                IconFileName = "deborah.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.05f,  // Slightly higher - confident woman
@@ -563,6 +573,7 @@ Speak as one who has wept and received, who has given your most precious gift ba
                     { "KnownFor", "Persistent Prayer, Mother of Samuel, Song of Praise" },
                     { "KeyVirtues", "Prayer, Trust, Sacrifice" }
                 },
+                IconFileName = "hannah.png",
                 Voice = new VoiceConfig
                 {
                     Pitch = 1.1f,   // Higher - gentle woman's voice

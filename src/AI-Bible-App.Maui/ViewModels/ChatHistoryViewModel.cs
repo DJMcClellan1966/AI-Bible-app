@@ -28,6 +28,11 @@ public partial class ChatHistoryViewModel : BaseViewModel
     [ObservableProperty]
     private ChatHistoryItem? selectedSession;
 
+    [ObservableProperty]
+    private string searchText = string.Empty;
+
+    private ObservableCollection<ChatHistoryItem> _allSessions = new();
+
     public ChatHistoryViewModel(IChatRepository chatRepository, ICharacterRepository characterRepository, IDialogService dialogService, IUserService userService)
     {
         _chatRepository = chatRepository;
@@ -57,6 +62,31 @@ public partial class ChatHistoryViewModel : BaseViewModel
         await LoadSessionsAsync();
     }
 
+    partial void OnSearchTextChanged(string value)
+    {
+        FilterSessions();
+    }
+
+    private void FilterSessions()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            ChatSessions = new ObservableCollection<ChatHistoryItem>(_allSessions);
+        }
+        else
+        {
+            var searchLower = SearchText.ToLowerInvariant();
+            var filtered = _allSessions.Where(item =>
+                item.CharacterName.ToLowerInvariant().Contains(searchLower) ||
+                item.LastMessage.ToLowerInvariant().Contains(searchLower) ||
+                item.Session.Messages.Any(m => m.Content.ToLowerInvariant().Contains(searchLower))
+            ).ToList();
+            
+            ChatSessions = new ObservableCollection<ChatHistoryItem>(filtered);
+        }
+        IsEmpty = ChatSessions.Count == 0;
+    }
+
     [RelayCommand]
     private async Task LoadSessionsAsync()
     {
@@ -80,6 +110,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
                     Session = session,
                     CharacterName = character?.Name ?? "Unknown",
                     CharacterTitle = character?.Title ?? "",
+                    CharacterIconFileName = character?.IconFileName ?? "default_avatar.png",
                     LastMessage = lastMessage?.Content?.Length > 100 
                         ? lastMessage.Content.Substring(0, 100) + "..." 
                         : lastMessage?.Content ?? "No messages",
@@ -89,6 +120,7 @@ public partial class ChatHistoryViewModel : BaseViewModel
             }
 
             ChatSessions = new ObservableCollection<ChatHistoryItem>(historyItems);
+            _allSessions = new ObservableCollection<ChatHistoryItem>(historyItems);
             IsEmpty = ChatSessions.Count == 0;
         }
         catch (Exception ex)
@@ -291,6 +323,7 @@ public class ChatHistoryItem
     public ChatSession Session { get; set; } = new();
     public string CharacterName { get; set; } = string.Empty;
     public string CharacterTitle { get; set; } = string.Empty;
+    public string CharacterIconFileName { get; set; } = "default_avatar.png";
     public string LastMessage { get; set; } = string.Empty;
     public int MessageCount { get; set; }
     public DateTime StartedAt { get; set; }

@@ -31,6 +31,7 @@
             <converters:BoolToVoiceIconConverter x:Key="BoolToVoiceIconConverter"/>
             <converters:BoolToYesNoConverter x:Key="BoolToYesNoConverter"/>
             <converters:BoolToSetChangeConverter x:Key="BoolToSetChangeConverter"/>
+            <converters:BoolToGeneratingPrayerTextConverter x:Key="BoolToGeneratingPrayerTextConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

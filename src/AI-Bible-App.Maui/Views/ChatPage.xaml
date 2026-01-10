@@ -8,17 +8,17 @@
              x:DataType="vm:ChatViewModel"
              x:Name="ThisPage"
              Title="{Binding Title}"
-             BackgroundColor="{DynamicResource PageBackgroundColor}">
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
     
-    <Grid RowDefinitions="*,Auto,Auto,Auto">
+    <Grid RowDefinitions="*,Auto,Auto,Auto" Padding="5">
         
         <!-- Chat Messages -->
         <ScrollView Grid.Row="0" x:Name="ChatScrollView">
             <CollectionView ItemsSource="{Binding Messages}"
-                           Margin="15">
+                           Margin="20,15">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ChatMessage">
-                        <Grid Margin="0,5">
+                        <Grid Margin="0,8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -28,14 +28,16 @@
                             <Border Grid.Row="0"
                                     IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='user'}"
                                     HorizontalOptions="End"
-                                    MaximumWidthRequest="300"
+                                    AutomationProperties.Name="Your message"
+                                    AutomationProperties.IsInAccessibleTree="True"
+                                    MaximumWidthRequest="500"
                                     Padding="15"
                                     BackgroundColor="{DynamicResource Primary}">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="20"/>
                                 </Border.StrokeShape>
                                 <Label Text="{Binding Content}"
-                                       TextColor="White"
+                                       TextColor="{StaticResource White}"
                                        LineBreakMode="WordWrap"/>
                             </Border>
                             
@@ -43,16 +45,16 @@
                             <Border Grid.Row="0"
                                     IsVisible="{Binding Role, Converter={StaticResource StringEqualConverter}, ConverterParameter='assistant'}"
                                     HorizontalOptions="Start"
-                                    MaximumWidthRequest="300"
+                                    MaximumWidthRequest="500"
                                     Padding="15"
                                     StrokeThickness="1"
-                                    Stroke="{DynamicResource Gray300}"
-                                    BackgroundColor="{DynamicResource CardBackground}">
+                                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource CardBackground}, Dark={StaticResource CardBackgroundDark}}">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="20"/>
                                 </Border.StrokeShape>
                                 <controls:BibleLinkLabel LinkedText="{Binding Content}"
-                                       TextColor="{DynamicResource TextColor}"
+                                       TextColor="{AppThemeBinding Light={StaticResource TextColor}, Dark={StaticResource TextColorDark}}"
                                        LineBreakMode="WordWrap"/>
                             </Border>
 
@@ -60,7 +62,7 @@
                             <Border Grid.Row="1"
                                     IsVisible="{Binding HasContextualReferences}"
                                     HorizontalOptions="Start"
-                                    MaximumWidthRequest="320"
+                                    MaximumWidthRequest="500"
                                     Margin="0,5,0,0"
                                     Padding="12"
                                     StrokeThickness="1"
@@ -126,56 +128,62 @@
         <Border Grid.Row="1"
                 IsVisible="{Binding IsAiTyping}"
                 HorizontalOptions="Start"
-                Margin="15,8"
-                Padding="12,8"
-                BackgroundColor="{DynamicResource CardBackground}"
+                Margin="20,10"
+                Padding="14,10"
+                BackgroundColor="{AppThemeBinding Light={StaticResource CardBackground}, Dark={StaticResource CardBackgroundDark}}"
                 StrokeThickness="1"
-                Stroke="{DynamicResource Gray300}">
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="15"/>
+                <RoundRectangle CornerRadius="18"/>
             </Border.StrokeShape>
-            <HorizontalStackLayout Spacing="8">
+            <HorizontalStackLayout Spacing="10">
                 <ActivityIndicator IsRunning="True"
-                                 WidthRequest="16"
-                                 HeightRequest="16"
+                                 WidthRequest="18"
+                                 HeightRequest="18"
                                  Color="{DynamicResource Primary}"/>
                 <Label Text="{Binding Character.Name, StringFormat='{0} is typing...'}"
-                       FontSize="13"
+                       FontSize="14"
                        FontAttributes="Italic"
-                       TextColor="{DynamicResource Gray600}"/>
+                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"/>
             </HorizontalStackLayout>
         </Border>
 
         <!-- Response Action Buttons (Row 2 - linked to latest assistant message) -->
         <HorizontalStackLayout Grid.Row="2"
-                               Spacing="8"
+                               Spacing="10"
                                HorizontalOptions="Start"
-                               Margin="15,5"
+                               Margin="20,8"
                                IsVisible="{Binding LatestAssistantMessage, Converter={StaticResource NullToBoolConverter}}">
             <!-- Thumbs Up -->
             <Button Text="👍"
-                    FontSize="16"
-                    WidthRequest="44"
-                    HeightRequest="44"
+                    FontSize="18"
+                    WidthRequest="50"
+                    HeightRequest="50"
                     Padding="0"
-                    CornerRadius="22"
-                    BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
+                    CornerRadius="25"
+                    BackgroundColor="{AppThemeBinding Light=#F5EDDE, Dark=#4A4034}"
                     Opacity="{Binding LatestAssistantMessage.Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='1'}"
+                    IsEnabled="{Binding IsActionInProgress, Converter={StaticResource InvertedBoolConverter}}"
                     Command="{Binding RateMessageCommand}"
-                    CommandParameter="{Binding LatestAssistantMessage, Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}"/>
+                    CommandParameter="{Binding LatestAssistantMessage, Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='1'}">
+                <Button.Shadow>
+                    <Shadow Brush="#30000000" Offset="1,2" Radius="4" Opacity="0.25" />
+                </Button.Shadow>
+            </Button>
             <!-- Thumbs Down -->
             <Button Text="👎"
-                    FontSize="16"
-                    WidthRequest="44"
+                    FontSize="18"
+                    WidthRequest="50"
                     HeightRequest="44"
                     Padding="0"
                     CornerRadius="22"
                     BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
                     Opacity="{Binding LatestAssistantMessage.Rating, Converter={StaticResource RatingOpacityConverter}, ConverterParameter='-1'}"
+                    IsEnabled="{Binding IsActionInProgress, Converter={StaticResource InvertedBoolConverter}}"
                     Command="{Binding RateMessageCommand}"
                     CommandParameter="{Binding LatestAssistantMessage, Converter={StaticResource MessageToRatingTupleConverter}, ConverterParameter='-1'}"/>
             <!-- Speak -->
-            <Button Text="🔊"
+            <Button Text="{Binding IsSpeaking, Converter={StaticResource BoolToVoiceIconConverter}}"
                     FontSize="16"
                     WidthRequest="44"
                     HeightRequest="44"
@@ -183,53 +191,99 @@
                     CornerRadius="22"
                     BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
                     ToolTipProperties.Text="Read aloud"
+                    IsEnabled="{Binding IsActionInProgress, Converter={StaticResource InvertedBoolConverter}}"
                     Command="{Binding ToggleVoiceCommand}"
                     CommandParameter="{Binding LatestAssistantMessage}"/>
-            <!-- Save -->
-            <Button Text="📝"
-                    FontSize="16"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
-                    CornerRadius="22"
-                    BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
-                    ToolTipProperties.Text="Save to reflections"
-                    Command="{Binding SaveToReflectionsCommand}"
-                    CommandParameter="{Binding LatestAssistantMessage}"/>
-            <!-- Prayer -->
-            <Button Text="🙏"
-                    FontSize="16"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
-                    CornerRadius="22"
-                    BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
-                    ToolTipProperties.Text="Generate a prayer"
-                    Command="{Binding GeneratePrayerFromMessageCommand}"
-                    CommandParameter="{Binding LatestAssistantMessage}"/>
+            <!-- Save - with loading state -->
+            <Grid WidthRequest="44" HeightRequest="44">
+                <Button Text="📝"
+                        FontSize="16"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        Padding="0"
+                        CornerRadius="22"
+                        BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
+                        ToolTipProperties.Text="Save to reflections"
+                        IsVisible="{Binding IsSavingReflection, Converter={StaticResource InvertedBoolConverter}}"
+                        IsEnabled="{Binding IsActionInProgress, Converter={StaticResource InvertedBoolConverter}}"
+                        Command="{Binding SaveToReflectionsCommand}"
+                        CommandParameter="{Binding LatestAssistantMessage}"/>
+                <Border WidthRequest="44"
+                        HeightRequest="44"
+                        BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
+                        IsVisible="{Binding IsSavingReflection}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="22"/>
+                    </Border.StrokeShape>
+                    <ActivityIndicator IsRunning="{Binding IsSavingReflection}"
+                                       WidthRequest="20"
+                                       HeightRequest="20"
+                                       Color="{DynamicResource Primary}"/>
+                </Border>
+            </Grid>
+            <!-- Prayer - with loading state -->
+            <Grid WidthRequest="44" HeightRequest="44">
+                <Button Text="🙏"
+                        FontSize="16"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        Padding="0"
+                        CornerRadius="22"
+                        BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
+                        ToolTipProperties.Text="Generate a prayer"
+                        AutomationProperties.Name="Generate prayer from conversation"
+                        AutomationProperties.HelpText="Create a prayer based on the current conversation"
+                        IsVisible="{Binding IsGeneratingPrayer, Converter={StaticResource InvertedBoolConverter}}"
+                        IsEnabled="{Binding IsActionInProgress, Converter={StaticResource InvertedBoolConverter}}"
+                        Command="{Binding GeneratePrayerFromMessageCommand}"
+                        CommandParameter="{Binding LatestAssistantMessage}"/>
+                <Border WidthRequest="44"
+                        HeightRequest="44"
+                        BackgroundColor="{AppThemeBinding Light=#E8E8E8, Dark=#505050}"
+                        IsVisible="{Binding IsGeneratingPrayer}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="22"/>
+                    </Border.StrokeShape>
+                    <ActivityIndicator IsRunning="{Binding IsGeneratingPrayer}"
+                                       WidthRequest="20"
+                                       HeightRequest="20"
+                                       Color="{DynamicResource Primary}"/>
+                </Border>
+            </Grid>
+            <!-- Status text for actions -->
+            <Label Text="{Binding IsGeneratingPrayer, Converter={StaticResource BoolToGeneratingPrayerTextConverter}}"
+                   IsVisible="{Binding IsActionInProgress}"
+                   VerticalOptions="Center"
+                   FontSize="12"
+                   FontAttributes="Italic"
+                   TextColor="{DynamicResource Gray600}"/>
         </HorizontalStackLayout>
 
         <!-- Input Area -->
         <Grid Grid.Row="3" 
               ColumnDefinitions="*,Auto"
-              Padding="15,10"
-              BackgroundColor="{DynamicResource CardBackground}">
+              Padding="20,12,20,18"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
             
             <Border Grid.Column="0"
-                    Padding="10"
+                    Padding="15,10"
                     StrokeThickness="1"
-                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray500}}"
                     BackgroundColor="{AppThemeBinding Light={StaticResource InputBackground}, Dark={StaticResource InputBackgroundDark}}">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="25"/>
+                    <RoundRectangle CornerRadius="20"/>
                 </Border.StrokeShape>
                 <Entry Text="{Binding UserMessage}"
                        Placeholder="Type a message..."
                        ReturnCommand="{Binding SendMessageCommand}"
                        IsEnabled="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
-                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                       MaxLength="2000"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                        PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}"
-                       VerticalOptions="Center"/>
+                       FontSize="14"
+                       VerticalOptions="Center"
+                       AutomationProperties.Name="Message input"
+                       AutomationProperties.HelpText="Type your message here and press Enter to send"/>
             </Border>
 
             <!-- Send Button (visible when not typing) -->
@@ -239,10 +293,11 @@
                     IsVisible="{Binding IsAiTyping, Converter={StaticResource InvertedBoolConverter}}"
                     Margin="10,0,0,0"
                     WidthRequest="80"
-                    HeightRequest="50"
-                    CornerRadius="25"
+                    HeightRequest="44"
+                    CornerRadius="20"
+                    FontSize="14"
                     BackgroundColor="{DynamicResource Primary}"
-                    TextColor="White"/>
+                    TextColor="{StaticResource White}"/>
             
             <!-- Stop Button (visible when AI is typing) -->
             <Button Grid.Column="1"
@@ -251,11 +306,15 @@
                     IsVisible="{Binding IsAiTyping}"
                     Margin="10,0,0,0"
                     WidthRequest="80"
-                    HeightRequest="50"
-                    CornerRadius="25"
+                    HeightRequest="44"
+                    CornerRadius="26"
                     FontSize="14"
-                    BackgroundColor="#E74C3C"
-                    TextColor="White"/>
+                    BackgroundColor="#C17B6F"
+                    TextColor="{StaticResource White}">
+                <Button.Shadow>
+                    <Shadow Brush="#40000000" Offset="2,3" Radius="6" Opacity="0.3" />
+                </Button.Shadow>
+            </Button>
         </Grid>
 
     </Grid>

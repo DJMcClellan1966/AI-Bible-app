@@ -47,6 +47,15 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty]
     private bool hasPinEnabled;
 
+    [ObservableProperty]
+    private string selectedTheme = "System";
+
+    [ObservableProperty]
+    private string selectedFontSize = "Medium";
+
+    public List<string> ThemeOptions { get; } = new() { "System", "Light", "Dark" };
+    public List<string> FontSizeOptions { get; } = new() { "Small", "Medium", "Large", "Extra Large" };
+
     public SettingsViewModel(ITrainingDataExporter exporter, IDialogService dialogService, IUserService userService)
     {
         _exporter = exporter;
@@ -74,6 +83,8 @@ public partial class SettingsViewModel : BaseViewModel
             CurrentUserSince = user.CreatedAt;
             IsModerationEnabled = user.Settings.EnableContentModeration;
             HasPinEnabled = user.HasPin;
+            SelectedTheme = user.Settings.ThemePreference;
+            SelectedFontSize = user.Settings.FontSizePreference;
         }
         else
         {
@@ -82,6 +93,8 @@ public partial class SettingsViewModel : BaseViewModel
             CurrentUserSince = DateTime.UtcNow;
             IsModerationEnabled = true;
             HasPinEnabled = false;
+            SelectedTheme = "System";
+            SelectedFontSize = "Medium";
         }
     }
 
@@ -89,6 +102,62 @@ public partial class SettingsViewModel : BaseViewModel
     {
         // Save the setting when toggled
         _ = SaveModerationSettingAsync(value);
+    }
+
+    partial void OnSelectedThemeChanged(string value)
+    {
+        // Save and apply theme when changed
+        _ = SaveAndApplyThemeAsync(value);
+    }
+
+    partial void OnSelectedFontSizeChanged(string value)
+    {
+        // Save font size preference when changed
+        _ = SaveFontSizeAsync(value);
+    }
+
+    private async Task SaveAndApplyThemeAsync(string theme)
+    {
+        try
+        {
+            await _userService.UpdateCurrentUserAsync(user =>
+            {
+                user.Settings.ThemePreference = theme;
+            });
+
+            // Apply theme immediately
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (Application.Current != null)
+                {
+                    Application.Current.UserAppTheme = theme switch
+                    {
+                        "Light" => AppTheme.Light,
+                        "Dark" => AppTheme.Dark,
+                        _ => AppTheme.Unspecified
+                    };
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Settings] Failed to save theme setting: {ex.Message}");
+        }
+    }
+
+    private async Task SaveFontSizeAsync(string fontSize)
+    {
+        try
+        {
+            await _userService.UpdateCurrentUserAsync(user =>
+            {
+                user.Settings.FontSizePreference = fontSize;
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Settings] Failed to save font size setting: {ex.Message}");
+        }
     }
 
     private async Task SaveModerationSettingAsync(bool enabled)

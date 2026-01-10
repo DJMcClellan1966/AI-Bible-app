@@ -133,7 +133,7 @@ public class BibleLinkLabel : Label
                 {
                     var openBrowser = await Shell.Current.CurrentPage.DisplayAlert(
                         "Passage Not Found",
-                        $"'{reference}' wasn't found in local Bible data.\n\nWould you like to view it on BibleGateway?",
+                        $"'{reference}' wasn't found in local Bible data.\n\nWould you like to view it on Bible.com?",
                         "Open Browser",
                         "Cancel");
 
@@ -167,22 +167,94 @@ public class BibleLinkLabel : Label
 
     private static string GetBibleGatewayUrl(string book, int chapter, int verseStart, int? verseEnd)
     {
-        // Normalize book name for URL
-        var normalizedBook = book
-            .Replace("1 ", "1+")
-            .Replace("2 ", "2+")
-            .Replace("3 ", "3+")
-            .Replace("I ", "1+")
-            .Replace("II ", "2+")
-            .Replace("III ", "3+")
-            .Replace(" ", "+");
+        // Bible.com (YouVersion) URL format - free access, no subscription required
+        // Uses the World English Bible (WEB) translation which is public domain
+        // Format: https://www.bible.com/bible/206/GEN.1.1.WEB
         
-        var searchTerm = $"{normalizedBook}+{chapter}:{verseStart}";
-        if (verseEnd.HasValue && verseEnd != verseStart)
-        {
-            searchTerm += $"-{verseEnd}";
-        }
+        var bookCode = GetBibleComBookCode(book);
+        var verseRef = verseEnd.HasValue && verseEnd != verseStart
+            ? $"{chapter}.{verseStart}-{verseEnd}"
+            : $"{chapter}.{verseStart}";
 
-        return $"https://www.biblegateway.com/passage/?search={Uri.EscapeDataString(searchTerm)}&version=WEB";
+        // 206 = World English Bible (WEB) - public domain
+        return $"https://www.bible.com/bible/206/{bookCode}.{verseRef}.WEB";
+    }
+
+    private static string GetBibleComBookCode(string book)
+    {
+        // Bible.com uses 3-letter book codes
+        var bookCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Old Testament
+            { "Genesis", "GEN" }, { "Gen", "GEN" },
+            { "Exodus", "EXO" }, { "Exod", "EXO" }, { "Ex", "EXO" },
+            { "Leviticus", "LEV" }, { "Lev", "LEV" },
+            { "Numbers", "NUM" }, { "Num", "NUM" },
+            { "Deuteronomy", "DEU" }, { "Deut", "DEU" },
+            { "Joshua", "JOS" }, { "Josh", "JOS" },
+            { "Judges", "JDG" }, { "Judg", "JDG" },
+            { "Ruth", "RUT" },
+            { "1 Samuel", "1SA" }, { "1Samuel", "1SA" }, { "1 Sam", "1SA" },
+            { "2 Samuel", "2SA" }, { "2Samuel", "2SA" }, { "2 Sam", "2SA" },
+            { "1 Kings", "1KI" }, { "1Kings", "1KI" },
+            { "2 Kings", "2KI" }, { "2Kings", "2KI" },
+            { "1 Chronicles", "1CH" }, { "1Chronicles", "1CH" },
+            { "2 Chronicles", "2CH" }, { "2Chronicles", "2CH" },
+            { "Ezra", "EZR" },
+            { "Nehemiah", "NEH" }, { "Neh", "NEH" },
+            { "Esther", "EST" }, { "Est", "EST" },
+            { "Job", "JOB" },
+            { "Psalms", "PSA" }, { "Psalm", "PSA" }, { "Ps", "PSA" },
+            { "Proverbs", "PRO" }, { "Prov", "PRO" },
+            { "Ecclesiastes", "ECC" }, { "Eccl", "ECC" },
+            { "Song of Solomon", "SNG" }, { "Song", "SNG" },
+            { "Isaiah", "ISA" }, { "Isa", "ISA" },
+            { "Jeremiah", "JER" }, { "Jer", "JER" },
+            { "Lamentations", "LAM" }, { "Lam", "LAM" },
+            { "Ezekiel", "EZK" }, { "Ezek", "EZK" },
+            { "Daniel", "DAN" }, { "Dan", "DAN" },
+            { "Hosea", "HOS" }, { "Hos", "HOS" },
+            { "Joel", "JOL" },
+            { "Amos", "AMO" },
+            { "Obadiah", "OBA" }, { "Obad", "OBA" },
+            { "Jonah", "JON" },
+            { "Micah", "MIC" }, { "Mic", "MIC" },
+            { "Nahum", "NAM" }, { "Nah", "NAM" },
+            { "Habakkuk", "HAB" }, { "Hab", "HAB" },
+            { "Zephaniah", "ZEP" }, { "Zeph", "ZEP" },
+            { "Haggai", "HAG" }, { "Hag", "HAG" },
+            { "Zechariah", "ZEC" }, { "Zech", "ZEC" },
+            { "Malachi", "MAL" }, { "Mal", "MAL" },
+            // New Testament
+            { "Matthew", "MAT" }, { "Matt", "MAT" }, { "Mt", "MAT" },
+            { "Mark", "MRK" }, { "Mk", "MRK" },
+            { "Luke", "LUK" }, { "Lk", "LUK" },
+            { "John", "JHN" }, { "Jn", "JHN" },
+            { "Acts", "ACT" },
+            { "Romans", "ROM" }, { "Rom", "ROM" },
+            { "1 Corinthians", "1CO" }, { "1Corinthians", "1CO" }, { "1 Cor", "1CO" },
+            { "2 Corinthians", "2CO" }, { "2Corinthians", "2CO" }, { "2 Cor", "2CO" },
+            { "Galatians", "GAL" }, { "Gal", "GAL" },
+            { "Ephesians", "EPH" }, { "Eph", "EPH" },
+            { "Philippians", "PHP" }, { "Phil", "PHP" },
+            { "Colossians", "COL" }, { "Col", "COL" },
+            { "1 Thessalonians", "1TH" }, { "1Thessalonians", "1TH" },
+            { "2 Thessalonians", "2TH" }, { "2Thessalonians", "2TH" },
+            { "1 Timothy", "1TI" }, { "1Timothy", "1TI" },
+            { "2 Timothy", "2TI" }, { "2Timothy", "2TI" },
+            { "Titus", "TIT" },
+            { "Philemon", "PHM" }, { "Phlm", "PHM" },
+            { "Hebrews", "HEB" }, { "Heb", "HEB" },
+            { "James", "JAS" }, { "Jas", "JAS" },
+            { "1 Peter", "1PE" }, { "1Peter", "1PE" },
+            { "2 Peter", "2PE" }, { "2Peter", "2PE" },
+            { "1 John", "1JN" }, { "1John", "1JN" },
+            { "2 John", "2JN" }, { "2John", "2JN" },
+            { "3 John", "3JN" }, { "3John", "3JN" },
+            { "Jude", "JUD" },
+            { "Revelation", "REV" }, { "Rev", "REV" }
+        };
+
+        return bookCodes.TryGetValue(book, out var code) ? code : book.ToUpperInvariant().Substring(0, Math.Min(3, book.Length));
     }
 }
